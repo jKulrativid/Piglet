@@ -29,12 +29,6 @@ public:
 };
 
 /* Network Packet */
-
-// TODO : implement ICMP PDU (both v4 and v6)
-class ICMP {
-
-};
-
 const int64_t V4_VER_SIZE(4);
 const int64_t V4_HL_SIZE(4);
 const int64_t V4_DSCP_SIZE(6);

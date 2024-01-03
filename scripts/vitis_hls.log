@@ -1,0 +1,113 @@
+ECHO is off.
+ECHO is off.
+
+****** Vitis HLS - High-Level Synthesis from C, C++ and OpenCL v2023.2 (64-bit)
+  **** SW Build 4023990 on Oct 11 2023
+  **** IP Build 4028589 on Sat Oct 14 00:45:43 MDT 2023
+  **** SharedData Build 4025554 on Tue Oct 10 17:18:54 MDT 2023
+    ** Copyright 1986-2022 Xilinx, Inc. All Rights Reserved.
+    ** Copyright 2022-2023 Advanced Micro Devices, Inc. All Rights Reserved.
+
+source C:/Xilinx/Vitis_HLS/2023.2/scripts/vitis_hls/hls.tcl -notrace
+INFO: [HLS 200-10] Running 'C:/Xilinx/Vitis_HLS/2023.2/bin/unwrapped/win64.o/vitis_hls.exe'
+INFO: [HLS 200-10] For user 'user' on host 'laptop-74h5dnve' (Windows NT_amd64 version 6.2) on Wed Jan 03 22:42:54 +0700 2024
+INFO: [HLS 200-10] In directory 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts'
+INFO: [HLS 200-2053] The vitis_hls executable is being deprecated. Consider using vitis-run --mode hls --tcl
+[2Kvitis_hls> [11C
+[2Kvitis_hls> [11C[2Kvitis_hls> o[12C[2Kvitis_hls> op[13C[2Kvitis_hls> opn[14C[2Kvitis_hls> opne[15C[2Kvitis_hls> opne-[16C[2Kvitis_hls> opne[15C[2Kvitis_hls> opn[14C[2Kvitis_hls> op[13C[2Kvitis_hls> ope[14C[2Kvitis_hls> open[15C[2Kvitis_hls> open_[16C[2Kvitis_hls> open_t[17C[2Kvitis_hls> open_tc[18C[2Kvitis_hls> open_tcl[19C[2Kvitis_hls> open_tcl_[20C[2Kvitis_hls> open_tcl_p[21C[2Kvitis_hls> open_tcl_po[22C[2Kvitis_hls> open_tcl_por[23C[2Kvitis_hls> open_tcl_po[22C[2Kvitis_hls> open_tcl_p[21C[2Kvitis_hls> open_tcl_pr[22C[2Kvitis_hls> open_tcl_pro[23C[2Kvitis_hls> open_tcl_proj[24C[2Kvitis_hls> open_tcl_proje[25C[2Kvitis_hls> open_tcl_projec[26C[2Kvitis_hls> open_tcl_project[27C[2Kvitis_hls> open_tcl_project [28C[2Kvitis_hls> open_tcl_project r[29C[2Kvitis_hls> open_tcl_project ru[30C[2Kvitis_hls> open_tcl_project run[31C[2Kvitis_hls> open_tcl_project run-hls-packet-manager.tcl[54C
+INFO: [HLS 200-1510] Running: open_project piglet_packet_manager_tcl_test 
+INFO: [HLS 200-10] Creating and opening project 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test'.
+INFO: [HLS 200-1510] Running: add_files ../source/common/basic_type.h 
+INFO: [HLS 200-10] Adding design file '../source/common/basic_type.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/buffer.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/buffer.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/buffer.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/buffer.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/flow_table.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/flow_table.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/flow_table.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/flow_table.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/packet_manager.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/packet_manager.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/packet_manager.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/packet_manager.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/parser.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/parser.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/parser.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/parser.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/pdu.cpp 
+WARNING: [HLS 200-40] Cannot find design file '../source/packet_manager/pdu.cpp'
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/pdu.h 
+WARNING: [HLS 200-40] Cannot find design file '../source/packet_manager/pdu.h'
+INFO: [HLS 200-1510] Running: add_files -tb ../source/packet_manager/packet_manager_test.cpp 
+INFO: [HLS 200-10] Adding test bench file '../source/packet_manager/packet_manager_test.cpp' to the project
+INFO: [HLS 200-1510] Running: open_solution piglet-packet-manager -flow_target vivado 
+INFO: [HLS 200-10] Creating and opening solution 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager'.
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.xilinx.com/access/sources/dita/topic?Doc_Version=2023.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: set_part xc7z010iclg225-1L 
+INFO: [HLS 200-1611] Setting target device to 'xc7z010i-clg225-1L'
+INFO: [HLS 200-1510] Running: create_clock -period 10 -name default 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+INFO: [HLS 200-1511] Skipping solution action command: csim_design
+INFO: [HLS 200-1511] Skipping solution action command: csynth_design
+INFO: [HLS 200-1511] Skipping solution action command: cosim_design
+INFO: [HLS 200-1511] Skipping solution action command: export_design
+INFO: [HLS 200-1510] Running: close_solution 
+INFO: [HLS 200-1510] Running: open_project piglet_packet_manager_tcl_test 
+INFO: [HLS 200-10] Opening project 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test'.
+INFO: [HLS 200-1510] Running: open_solution piglet-packet-manager 
+INFO: [HLS 200-10] Opening solution 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager'.
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.xilinx.com/access/sources/dita/topic?Doc_Version=2023.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+piglet_packet_manager_tcl_test
+[2Kvitis_hls> [11C[2Kvitis_hls> open_tcl_project run-hls-packet-manager.tcl[54C
+INFO: [HLS 200-1510] Running: close_project 
+INFO: [HLS 200-1510] Running: open_project piglet_packet_manager_tcl_test 
+INFO: [HLS 200-10] Opening project 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test'.
+INFO: [HLS 200-1510] Running: add_files ../source/common/basic_type.h 
+INFO: [HLS 200-10] Adding design file '../source/common/basic_type.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/buffer.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/buffer.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/buffer.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/buffer.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/flow_table.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/flow_table.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/flow_table.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/flow_table.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/packet_manager.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/packet_manager.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/packet_manager.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/packet_manager.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/parser.cpp 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/parser.cpp' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/parser.h 
+INFO: [HLS 200-10] Adding design file '../source/packet_manager/parser.h' to the project
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/pdu.cpp 
+WARNING: [HLS 200-40] Cannot find design file '../source/packet_manager/pdu.cpp'
+INFO: [HLS 200-1510] Running: add_files ../source/packet_manager/pdu.h 
+WARNING: [HLS 200-40] Cannot find design file '../source/packet_manager/pdu.h'
+INFO: [HLS 200-1510] Running: add_files -tb ../source/packet_manager/packet_manager_test.cpp 
+INFO: [HLS 200-10] Adding test bench file '../source/packet_manager/packet_manager_test.cpp' to the project
+INFO: [HLS 200-1510] Running: open_solution piglet-packet-manager -flow_target vivado 
+INFO: [HLS 200-10] Opening solution 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager'.
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.xilinx.com/access/sources/dita/topic?Doc_Version=2023.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+INFO: [HLS 200-1510] Running: set_part xc7z010iclg225-1L 
+INFO: [HLS 200-1510] Running: create_clock -period 10 -name default 
+INFO: [HLS 200-1511] Skipping solution action command: csim_design
+INFO: [HLS 200-1511] Skipping solution action command: csynth_design
+INFO: [HLS 200-1511] Skipping solution action command: cosim_design
+INFO: [HLS 200-1511] Skipping solution action command: export_design
+INFO: [HLS 200-1510] Running: close_solution 
+INFO: [HLS 200-1510] Running: open_project piglet_packet_manager_tcl_test 
+INFO: [HLS 200-10] Opening project 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test'.
+INFO: [HLS 200-1510] Running: open_solution piglet-packet-manager 
+INFO: [HLS 200-10] Opening solution 'C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager'.
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Resolution: For help on HLS 200-1505 see docs.xilinx.com/access/sources/dita/topic?Doc_Version=2023.2%20English&url=ug1448-hls-guidance&resourceid=200-1505.html
+piglet_packet_manager_tcl_test
+[2Kvitis_hls> [11C

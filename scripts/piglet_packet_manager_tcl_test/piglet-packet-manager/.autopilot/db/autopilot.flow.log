@@ -1,0 +1,160 @@
+INFO-FLOW: Workspace C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager opened at Wed Jan 03 22:43:23 +0700 2024
+Execute         send_msg_by_id INFO @200-1505@%s%s  vivado 
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Command       open_solution done; 0.445 sec.
+Execute       set_part xc7z010iclg225-1L 
+INFO: [HLS 200-1510] Running: set_part xc7z010iclg225-1L 
+Execute         create_platform xc7z010iclg225-1L -board  
+DBG:HLSDevice: Trying to load device library: C:/Xilinx/Vitis_HLS/2023.2\lib\win64.o\xv_hlsvwrap.dll
+DBG:HLSDevice: first parts/arch.xml in RDI_DATADIR: C:/Xilinx/Vivado/2023.2/data/parts/arch.xml
+DBG:HLSDevice: init success
+INFO: [HLS 200-1611] Setting target device to 'xc7z010i-clg225-1L'
+Command         create_platform done; 2.28 sec.
+Execute         source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/common/xilinx.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/plb46.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/axi4.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/nativeAXI4.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/saxilite.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/scripts/xilinxcoregen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/XilEDKCoreGen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/dds_compiler.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/util.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfft.gen 
+Command           ap_source done; 0.261 sec.
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfir.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/DSP48/dsp48.gen 
+Command         ap_source done; 0.583 sec.
+Execute         ap_part_info -name xc7z010i-clg225-1L -data info 
+Execute         config_compile -quiet -complex-mul-dsp=0 
+Command       set_part done; 2.952 sec.
+Execute       create_clock -period 10 -name default 
+INFO: [HLS 200-1510] Running: create_clock -period 10 -name default 
+Execute         ap_set_clock -name default -period 10 -default=false 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+INFO: [HLS 200-1511] Skipping solution action command: csim_design
+INFO: [HLS 200-1511] Skipping solution action command: csynth_design
+INFO: [HLS 200-1511] Skipping solution action command: cosim_design
+INFO: [HLS 200-1511] Skipping solution action command: export_design
+Command     ap_source done; 3.847 sec.
+Execute     close_solution 
+INFO: [HLS 200-1510] Running: close_solution 
+Execute       cleanup_all 
+Execute       cleanup_all 
+INFO-FLOW: Workspace C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager opened at Wed Jan 03 22:43:26 +0700 2024
+Execute       ap_set_clock -name default -period 10 -default=false 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+Execute       set_part xc7z010i-clg225-1L 
+Execute         create_platform xc7z010i-clg225-1L -board  
+Command         create_platform done; 0.259 sec.
+Execute         source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/common/xilinx.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/plb46.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/axi4.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/nativeAXI4.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/saxilite.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/scripts/xilinxcoregen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/XilEDKCoreGen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/dds_compiler.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/util.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfft.gen 
+Command           ap_source done; 0.203 sec.
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfir.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/DSP48/dsp48.gen 
+Command         ap_source done; 0.274 sec.
+Execute         ap_part_info -name xc7z010i-clg225-1L -data info 
+Execute         config_compile -quiet -complex-mul-dsp=0 
+Command       set_part done; 0.61 sec.
+Execute       send_msg_by_id INFO @200-1505@%s%s  vivado 
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Command     open_solution done; 1.023 sec.
+Command   open_tcl_project done; 4.972 sec.
+Execute   open_tcl_project run-hls-packet-manager.tcl 
+Execute     close_project 
+INFO: [HLS 200-1510] Running: close_project 
+Execute       close_solution 
+Execute         cleanup_all 
+Execute         cleanup_all 
+INFO-FLOW: Workspace C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager opened at Wed Jan 03 22:44:39 +0700 2024
+Execute         ap_set_clock -name default -period 10 -default=false 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+Execute         set_part xc7z010i-clg225-1L 
+Execute           create_platform xc7z010i-clg225-1L -board  
+Command           create_platform done; 0.253 sec.
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/common/xilinx.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/plb46.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/axi4.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/nativeAXI4.gen 
+Execute               source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/saxilite.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/scripts/xilinxcoregen.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/XilEDKCoreGen.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/dds_compiler.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/util.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfft.gen 
+Command             ap_source done; 0.177 sec.
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfir.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/DSP48/dsp48.gen 
+Command           ap_source done; 0.245 sec.
+Execute           ap_part_info -name xc7z010i-clg225-1L -data info 
+Execute           config_compile -quiet -complex-mul-dsp=0 
+Command         set_part done; 0.574 sec.
+Execute         send_msg_by_id INFO @200-1505@%s%s  vivado 
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Command       open_solution done; 0.903 sec.
+Execute       set_part xc7z010iclg225-1L 
+INFO: [HLS 200-1510] Running: set_part xc7z010iclg225-1L 
+Execute         create_platform xc7z010iclg225-1L -board  
+Command         create_platform done; 0.219 sec.
+Execute         source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/common/xilinx.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/plb46.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/axi4.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/nativeAXI4.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/saxilite.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/scripts/xilinxcoregen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/XilEDKCoreGen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/dds_compiler.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/util.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfft.gen 
+Command           ap_source done; 0.179 sec.
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfir.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/DSP48/dsp48.gen 
+Command         ap_source done; 0.251 sec.
+Execute         ap_part_info -name xc7z010i-clg225-1L -data info 
+Execute         config_compile -quiet -complex-mul-dsp=0 
+Command       set_part done; 0.54 sec.
+Execute       create_clock -period 10 -name default 
+INFO: [HLS 200-1510] Running: create_clock -period 10 -name default 
+INFO: [HLS 200-1511] Skipping solution action command: csim_design
+INFO: [HLS 200-1511] Skipping solution action command: csynth_design
+INFO: [HLS 200-1511] Skipping solution action command: cosim_design
+INFO: [HLS 200-1511] Skipping solution action command: export_design
+Command     ap_source done; 1.704 sec.
+Execute     close_solution 
+INFO: [HLS 200-1510] Running: close_solution 
+Execute       cleanup_all 
+Execute       cleanup_all 
+INFO-FLOW: Workspace C:/Users/user/ProjeXt/Vitis-HLS-Project/Piglet/scripts/piglet_packet_manager_tcl_test/piglet-packet-manager opened at Wed Jan 03 22:44:40 +0700 2024
+Execute       ap_set_clock -name default -period 10 -default=false 
+INFO: [SYN 201-201] Setting up clock 'default' with a period of 10ns.
+Execute       set_part xc7z010i-clg225-1L 
+Execute         create_platform xc7z010i-clg225-1L -board  
+Command         create_platform done; 0.327 sec.
+Execute         source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/common/xilinx.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/plb46.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/axi4.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/nativeAXI4.gen 
+Execute             source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/saxilite.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/scripts/xilinxcoregen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/interface/XilEDKCoreGen.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/dds_compiler.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/util.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfft.gen 
+Command           ap_source done; 0.181 sec.
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/ip/xfir.gen 
+Execute           source C:/Xilinx/Vitis_HLS/2023.2/common/technology/xilinx/DSP48/dsp48.gen 
+Command         ap_source done; 0.262 sec.
+Execute         ap_part_info -name xc7z010i-clg225-1L -data info 
+Execute         config_compile -quiet -complex-mul-dsp=0 
+Command       set_part done; 0.67 sec.
+Execute       send_msg_by_id INFO @200-1505@%s%s  vivado 
+INFO: [HLS 200-1505] Using flow_target 'vivado'
+Command     open_solution done; 1.029 sec.
+Command   open_tcl_project done; 2.814 sec.
