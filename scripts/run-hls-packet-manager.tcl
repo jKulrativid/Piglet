@@ -1,4 +1,4 @@
-open_project piglet_packet_manager_tcl_test
+open_project ../generated/piglet_packet_manager_tcl_test
 
 add_files ../source/common/basic_type.h
 add_files ../source/packet_manager/buffer.cpp
