@@ -9,8 +9,8 @@ add_files ../source/packet_manager/packet_manager.cpp
 add_files ../source/packet_manager/packet_manager.h
 add_files ../source/packet_manager/parser.cpp
 add_files ../source/packet_manager/parser.h
-add_files ../source/packet_manager/pdu.cpp
-add_files ../source/packet_manager/pdu.h
+add_files ../source/common/pdu.cpp
+add_files ../source/common/pdu.h
 
 add_files -tb ../source/packet_manager/packet_manager_test.cpp
 open_solution "piglet-packet-manager" -flow_target vivado
