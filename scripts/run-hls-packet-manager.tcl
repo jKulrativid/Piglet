@@ -1,20 +1,24 @@
 open_project ../generated/piglet_packet_manager_tcl_test
 
+# common package
 add_files ../source/common/basic_type.h
-add_files ../source/packet_manager/buffer.cpp
-add_files ../source/packet_manager/buffer.h
-add_files ../source/packet_manager/flow_table.cpp
-add_files ../source/packet_manager/flow_table.h
-add_files ../source/packet_manager/packet_manager.cpp
-add_files ../source/packet_manager/packet_manager.h
-add_files ../source/packet_manager/parser.cpp
-add_files ../source/packet_manager/parser.h
 add_files ../source/common/pdu.cpp
 add_files ../source/common/pdu.h
 
-add_files -tb ../source/packet_manager/packet_manager_test.cpp
+# packet manager package
+add_files ../source/packet_manager/linked_list.h
+add_files ../source/packet_manager/linked_list.cpp
+
+# packet manager testbench
+add_files -tb ../source/packet_manager/linked_list_test.h
+add_files -tb ../source/packet_manager/linked_list_test.cpp
+
+# top module
+
+add_files -tb ../source/packet_manager/top_test.cpp
+
 open_solution "piglet-packet-manager" -flow_target vivado
-set_part {xc7z010iclg225-1L}
+set_part {xcvu11p-flga2577-1-e}
 create_clock -period 10 -name default
 csim_design
 csynth_design

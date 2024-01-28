@@ -6,6 +6,9 @@
 
 #include "basic_type.h"
 
+namespace pdu
+{
+
 /* Transportation Segment */
 const int64_t SRC_PORT_SIZE(16);
 const int64_t DEST_PORT_SIZE(16);
@@ -31,6 +34,8 @@ public:
 /* Network Packet */
 const int64_t V4_VER_SIZE(4);
 const int64_t V4_HL_SIZE(4);
+const int64_t V4_TOS_SIZE(8);
+const int64_t V4_TOTAL_LENGTH_SIZE(16);
 const int64_t V4_DSCP_SIZE(6);
 const int64_t V4_ECN_SIZE(2);
 const int64_t V4_TOTAL_LEN_SIZE(16);
@@ -58,13 +63,11 @@ public :
 	ap_uint<V4_CHECKSUM_SIZE> v4_checksum;
 	ap_uint<V4_SRC_IP_SIZE> v4_src_ip;
 	ap_uint<V4_DEST_IP_SIZE> v4_dest_ip;
-	ap_uint<V4__MAX_OPTIONS_SIZE> v4_options;
+	ap_uint<V4_MAX_OPTIONS_SIZE> v4_options;
 
 	// TODO: handle IP.v6 header extension
 
 	Segment data;
-
-	Packet() {}
 };
 
 /* ETHERNET FRAME */
@@ -74,12 +77,19 @@ const int64_t ETH_PAYLOAD_LEN_SIZE(16);
 
 class EthFrame {
 public:
-	ap_uint<ETH_MAC_ARRD_SIZE> src_mac, dest_mac;
+	ap_uint<ETH_MAC_ADDR_SIZE> src_mac, dest_mac;
 	ap_uint<ETH_VLAN_TAG_SIZE> vlan_tag;
 	ap_uint<ETH_PAYLOAD_LEN_SIZE> payload_len;
 	Packet payload;
-
-	EthFrame() {}
 };
 
+typedef struct {
+	ap_uint<V4_PROTOCOL_SIZE> protocol;
+	ap_uint<V4_SRC_IP_SIZE> src_ip;
+	ap_uint<SRC_PORT_SIZE> src_port;
+	ap_uint<V4_DEST_IP_SIZE> dest_ip;
+	ap_uint<DEST_PORT_SIZE> dest_port;
+} FiveTuples;
+
+};
 #endif
