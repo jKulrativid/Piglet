@@ -8,6 +8,14 @@ using linked_list::LinkedList;
 
 LinkedList::LinkedList() {}
 
+int64_t LinkedList::hash_node(Node& node) {
+	return 0;
+}
+
+int64_t LinkedList::hash_header(Header& header) {
+	return 0;
+}
+
 int64_t LinkedList::find_header_by_five_tuples(FiveTuples& five_tuples, Header& header) {
 	return 0;
 }

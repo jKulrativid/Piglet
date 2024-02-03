@@ -34,6 +34,8 @@ class LinkedList {
 private:
 	Header header_mem[LL_HEADER_MEM_SIZE];
 	Node node_mem[LL_NODE_MEM_SIZE];
+	int64_t hash_node(Node& node);
+	int64_t hash_header(Header& header);
 public:
 	int64_t find_node(int64_t key, Node& node);
 	int64_t insert_node(Node& node);
