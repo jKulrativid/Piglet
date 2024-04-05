@@ -1,0 +1,1 @@
+cmd_/home/ubuntu/stream/kernel/dma-proxy.ko := ld -r -EL  -maarch64elf --build-id=sha1  -T scripts/module.lds -o /home/ubuntu/stream/kernel/dma-proxy.ko /home/ubuntu/stream/kernel/dma-proxy.o /home/ubuntu/stream/kernel/dma-proxy.mod.o;  true
