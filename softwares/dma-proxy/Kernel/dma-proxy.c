@@ -118,7 +118,7 @@
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
 
-#include "dma-proxy.h"
+#include "../Common/dma-proxy.h"
 
 MODULE_LICENSE("GPL");
 
@@ -132,7 +132,7 @@ MODULE_LICENSE("GPL");
  * Note that this test requires a transmit and receive channel to function and uses the first
  * transmit and receive channnels when multiple channels exist.
  */
-static unsigned internal_test = 0;
+static unsigned internal_test = 1;
 module_param(internal_test, int, S_IRUGO);
 
 /* The following data structures represent a single channel of DMA, transmit or receive in the case
@@ -651,7 +651,6 @@ static struct platform_driver dma_proxy_driver = {
 static int __init dma_proxy_init(void)
 {
 	return platform_driver_register(&dma_proxy_driver);
-
 }
 
 static void __exit dma_proxy_exit(void)
