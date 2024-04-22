@@ -132,7 +132,7 @@ MODULE_LICENSE("GPL");
  * Note that this test requires a transmit and receive channel to function and uses the first
  * transmit and receive channnels when multiple channels exist.
  */
-static unsigned internal_test = 1;
+static unsigned internal_test = 0;
 module_param(internal_test, int, S_IRUGO);
 
 /* The following data structures represent a single channel of DMA, transmit or receive in the case
