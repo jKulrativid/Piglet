@@ -2,7 +2,7 @@
 <spirit:component xmlns:xilinx="http://www.xilinx.com" xmlns:spirit="http://www.spiritconsortium.org/XMLSchema/SPIRIT/1685-2009" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <spirit:vendor>user.org</spirit:vendor>
   <spirit:library>user</spirit:library>
-  <spirit:name>echo_modded</spirit:name>
+  <spirit:name>p4_echo</spirit:name>
   <spirit:version>1.0</spirit:version>
   <spirit:busInterfaces>
     <spirit:busInterface>
@@ -638,8 +638,8 @@
       </xilinx:taxonomies>
       <xilinx:displayName>echo_modded_v1_0</xilinx:displayName>
       <xilinx:definitionSource>IPI</xilinx:definitionSource>
-      <xilinx:coreRevision>2</xilinx:coreRevision>
-      <xilinx:coreCreationDateTime>2024-04-22T19:50:10Z</xilinx:coreCreationDateTime>
+      <xilinx:coreRevision>3</xilinx:coreRevision>
+      <xilinx:coreCreationDateTime>2024-04-25T08:11:34Z</xilinx:coreCreationDateTime>
       <xilinx:configElementInfos>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.M_AXIS_0.FREQ_HZ" xilinx:valuePermission="bd"/>
         <xilinx:configElementInfo xilinx:referenceId="BUSIFPARAM_VALUE.M_AXIS_0.HAS_TKEEP" xilinx:valueSource="auto_prop" xilinx:valuePermission="bd"/>
