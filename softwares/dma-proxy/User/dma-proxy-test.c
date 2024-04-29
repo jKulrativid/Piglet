@@ -396,6 +396,7 @@ int main(int argc, char *argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+
 	/* Grab the start time to calculate performance then start the threads & transfers on all channels */
 
 	start_time = get_posix_clock_time_usec();
