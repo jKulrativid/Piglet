@@ -118,7 +118,7 @@
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
 
-#include "dma-proxy.h"
+#include "../Common/dma-proxy.h"
 
 MODULE_LICENSE("GPL");
 
@@ -651,7 +651,6 @@ static struct platform_driver dma_proxy_driver = {
 static int __init dma_proxy_init(void)
 {
 	return platform_driver_register(&dma_proxy_driver);
-
 }
 
 static void __exit dma_proxy_exit(void)

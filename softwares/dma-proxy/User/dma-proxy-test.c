@@ -56,7 +56,7 @@
 #include <errno.h>
 #include <sys/param.h>
 
-#include "dma-proxy.h"
+#include "../Common/dma-proxy.h"
 
 /* The user must tune the application number of channels to match the proxy driver device tree
  * and the names of each channel must match the dma-names in the device tree for the proxy
