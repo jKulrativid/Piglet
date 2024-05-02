@@ -1,17 +1,22 @@
+<<<<<<< Updated upstream:softwares/dma-proxy/Kernel/Kernel/Kernel0/Makefile
 MOD = dma-proxy-0
 KPATH :=/lib/modules/$(shell uname -r)/build
 PWD :=$(shell pwd)
 obj-m = $(MOD).o
 
+=======
+.PHONY: all
+>>>>>>> Stashed changes:softwares/dma-proxy/Kernel/Makefile
 all:
-	$(MAKE) -C $(KPATH) M=$(PWD) modules
+	cd Kernel0 && make
+	cd Kernel1 && make
 
-clean:
-	$(MAKE) -C $(KPATH) M=$(PWD) clean
-
+.PHONY: insmod
 insmod: all
-	sudo rmmod $(MOD).ko; true
-	sudo insmod $(MOD).ko
+	cd Kernel0 && make insmod
+	cd Kernel1 && make insmod
 
-log: 
-	tail -f /var/log/messages
+.PHONY: clean
+clean:
+	cd Kernel0 && make clean
+	cd Kernel1 && make clean
