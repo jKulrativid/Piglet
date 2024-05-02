@@ -98,7 +98,7 @@
  *
  * dma_proxy3 {
  *   compatible ="xlnx,dma_proxy";
- *   dmas = <&axi_mcdma_0 0  &axi_mcdma_0 16 &axi_mcdma_0 1 &axi_mcdma_0 17> ;
+ *   dmas = <&axi_mcdma_0 0  &axi_mcdma_0 16 &axi_mcdma_0 1 &axi_mcdma_0 17>;
  *   dma-names = "dma_proxy_tx_0", "dma_proxy_rx_0", "dma_proxy_tx_1", "dma_proxy_rx_1";
  * };
  */
@@ -118,11 +118,11 @@
 #include <linux/ioctl.h>
 #include <linux/uaccess.h>
 
-#include "../Common/dma-proxy.h"
+#include "../../Common/dma-proxy.h"
 
 MODULE_LICENSE("GPL");
 
-#define DRIVER_NAME 			"dma_proxy"
+#define DRIVER_NAME 			"dma_proxy_1"
 #define TX_CHANNEL			0
 #define RX_CHANNEL			1
 #define ERROR 					-1
@@ -634,13 +634,13 @@ static int dma_proxy_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id dma_proxy_of_ids[] = {
-	{ .compatible = "xlnx,dma_proxy",},
+	{ .compatible = "xlnx,dma_proxy_1",},
 	{}
 };
 
 static struct platform_driver dma_proxy_driver = {
 	.driver = {
-		.name = "dma_proxy_driver",
+		.name = "dma_proxy_driver_1",
 		.owner = THIS_MODULE,
 		.of_match_table = dma_proxy_of_ids,
 	},

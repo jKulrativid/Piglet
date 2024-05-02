@@ -1,4 +1,4 @@
-MOD = dma-proxy
+MOD = dma-proxy-0
 KPATH :=/lib/modules/$(shell uname -r)/build
 PWD :=$(shell pwd)
 obj-m = $(MOD).o
