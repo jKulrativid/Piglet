@@ -21,8 +21,11 @@
 
 #include "pcap-utils.h"
 
-#define DEBUG_LOGGING 1
+#define DEBUG_LOGGING 0
 #define SHOW_RAW_PAYLOAD 0
+#define USE_CALLBACK 0 // 1: use pcap_loop, 0: use pcap_next_ex
+
+int count = 0;
 
 void
 print_app_usage(void);
@@ -151,6 +154,7 @@ return;
 }
 
 void got_packet_2(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+	printf("got packet no.:%d\n", ++count);
 	parsed_packet parsed_packet = parse_packet(packet);
 	
 	#if DEBUG_LOGGING
@@ -187,11 +191,13 @@ void got_packet_2(u_char *args, const struct pcap_pkthdr *header, const u_char *
 	print_payload(packet, SIZE_ETHERNET + header->caplen);
 	printf("\n");
 	#endif
+	printf("waiting for packet\n");
+	
 }
 
 int main(int argc, char **argv)
 {
-
+	printf("mode: %d\n", USE_CALLBACK);
 	char *dev = NULL;			/* capture device name */
 	char filter_exp[256];
 
@@ -225,6 +231,11 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
     
+	#if USE_CALLBACK
+	printf("waiting for packet\n");
+	pcap_loop(handle, 0, got_packet_2, NULL);
+	#else
+	printf("waiting for packet\n");
     while(true) {
         struct pcap_pkthdr *header;
         const u_char *packet;
@@ -232,6 +243,7 @@ int main(int argc, char **argv)
         // got_packet(NULL, header, packet);
 		got_packet_2(NULL, header, packet);
     }
+	#endif
 
     cleanup_pcap(handle, &fp);
 	return 0;

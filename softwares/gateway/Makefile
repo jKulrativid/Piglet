@@ -19,22 +19,22 @@ clean:
 
 .PHONY: run-sniffer
 run-sniffer:
-	sudo ./sniffer ens34
+	sudo ./sniffer piglet-loopback ""
 
 .PHONY: run-injector
 run-injector:
-	sudo ./injector lo:1 1
+	sudo ./injector piglet-loopback 100000
 
 all-s: sniffer run-sniffer
 
 all-i: injector run-injector
 
-# setup-loopback:
-# 	sudo modprobe dummy
-# 	sudo ip link add piglet-loopback type dummy
-# 	sudo ip link set piglet-loopback up
-# 	sudo ifconfig piglet-loopback hw ether 00:00:00:00:00:01
-# 	ip link show piglet-loopback
+setup-loopback:
+	sudo modprobe dummy && \
+	sudo ip link add piglet-loopback type dummy && \
+	sudo ip link set piglet-loopback up && \
+	sudo ifconfig piglet-loopback hw ether 00:00:00:00:00:01 && \
+	ip link show piglet-loopback
 
 # remove-loopback:
 # 	sudo ip link delete piglet-loopback
