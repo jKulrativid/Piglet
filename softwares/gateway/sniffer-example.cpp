@@ -239,7 +239,15 @@ int main(int argc, char **argv)
     while(true) {
         struct pcap_pkthdr *header;
         const u_char *packet;
-        pcap_next_ex(handle, &header, &packet);
+        int status = pcap_next_ex(handle, &header, &packet);
+		if (status == -1) {
+			printf("Error reading the packets: %s\n", pcap_geterr(handle));
+			break;
+		} 
+		if (status == 0) {
+			printf("Receive timeout\n");
+			continue;
+		}
         // got_packet(NULL, header, packet);
 		got_packet_2(NULL, header, packet);
     }

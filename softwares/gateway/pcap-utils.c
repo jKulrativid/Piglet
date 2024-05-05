@@ -19,6 +19,8 @@
 /* default snap length (maximum bytes per packet to capture) */
 #define SNAP_LEN 1518
 
+#define PCAP_TIMEOUT 1000 // doesn't seems useful for a non-blocking mode
+
 
 
 /*
@@ -207,7 +209,7 @@ pcap_t* initiate_inject_pcap(char *dev) {
 	printf("Device: %s\n", dev);
 
 	/* open capture device */
-	handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
+	handle = pcap_open_live(dev, SNAP_LEN, 1, PCAP_TIMEOUT, errbuf);
 	if (handle == NULL) {
 		fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
 		return NULL;
@@ -247,11 +249,18 @@ pcap_t* initiate_sniff_pcap(struct bpf_program *fp,  char *dev, const char filte
 	printf("Filter expression: %s\n", filter_exp);
 
 	/* open capture device */
-	handle = pcap_open_live(dev, SNAP_LEN, 1, 1000, errbuf);
+	handle = pcap_open_live(dev, SNAP_LEN, 1, PCAP_TIMEOUT, errbuf);
 	if (handle == NULL) {
 		fprintf(stderr, "Couldn't open device %s: %s\n", dev, errbuf);
 		return NULL;
 	}
+
+	// Set the handle to non-blocking mode
+    if (pcap_setnonblock(handle, 1, errbuf) != 0) {
+        fprintf(stderr, "Error setting non-blocking mode: %s\n", errbuf);
+        pcap_close(handle);
+        return NULL;
+    }
 
 	/* make sure we're capturing on an Ethernet device [2] */
 	if (pcap_datalink(handle) != DLT_EN10MB) {
