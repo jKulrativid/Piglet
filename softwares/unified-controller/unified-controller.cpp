@@ -41,15 +41,12 @@
  */
 
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/types.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <pthread.h>
-#include <thread>
 #include <time.h>
 #include <sys/time.h>
 #include <stdint.h>
@@ -58,103 +55,15 @@
 #include <time.h>
 #include <errno.h>
 #include <sys/param.h>
-
-#include <queue>
-#include <mutex>
-#include <condition_variable>
-#include <utility>
+#include <string.h>
 #include <chrono>
+#include <atomic>
+#include <thread>
+
 #include <pcap.h>
 
 #include "../dma-proxy/Common/dma-proxy.h"
 #include "../gateway/pcap-utils.h"
-
-#define ETH_IN_DEV "eth0"
-
-// A threadsafe-queue.
-template <class T>
-class SafeQueue
-{
-public:
-    SafeQueue() : q(), m(), c() {}
-
-    ~SafeQueue() {}
-
-	
-    // Add an element to the queue.
-    void enqueue(T t)
-    {
-
-        std::lock_guard<std::mutex> lock(m);
-		#ifdef DBG_QUEUE
-		//char s[1000];
-		//const auto p1 = std::chrono::system_clock::now();
-        //long long ttt =std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count();				
-		//sprintf(s,"[%s] + %d\n",keep_str(ttt,9).c_str(),total_read);
-		//COUT << s;
-		#endif
-		
-        q.push(t);
-        c.notify_one();
-    }
-
-    // Get the front element.
-    // If the queue is empty, wait till a element is avaiable.
-    T dequeue(void)
-    {
-
-        std::unique_lock<std::mutex> lock(m);
-		
-		#ifdef DBG_QUEUE
-		//char s[1000];
-		//const auto p1 = std::chrono::system_clock::now();
-		//long long ttt =std::chrono::duration_cast<std::chrono::microseconds>(p1.time_since_epoch()).count();				
-		//sprintf(s,"[%s] - %d\n",keep_str(ttt,9).c_str(),total_read);
-		//COUT << s;
-        #endif
-
-		while (q.empty())
-        {
-            // release lock as long as the wait and reaquire it afterwards.
-            c.wait(lock);
-        }
-		
-        T val = q.front();
-        q.pop();
-		
-		#ifdef DBG_QUEUE
-		//const auto _p1 = std::chrono::system_clock::now();
-		//long long _ttt =std::chrono::duration_cast<std::chrono::microseconds>(_p1.time_since_epoch()).count();				
-		//sprintf(s,"[%s] ? %d\n",keep_str(_ttt,9).c_str(),total_read);
-		//COUT << s;
-		#endif
-
-        return val;
-    }
-	template< class Rep, class Period>
-	bool wait_empty(const std::chrono::duration<Rep, Period>& rel_time) {
-        std::unique_lock<std::mutex> lock(m);
-        if (q.empty())
-        {
-            // release lock as long as the wait and reaquire it afterwards.
-            c.wait_for(lock, rel_time);
-        }
-		return q.empty();
-	}
-    int size() {
-	std::unique_lock<std::mutex> lock(m);
-        return q.size();
-    }
-    bool empty() {
-		std::unique_lock<std::mutex> lock(m);
-		return q.empty();
-    }
-
-private:
-    std::queue<T> q;
-    mutable std::mutex m;
-    std::condition_variable c;
-};
 
 /* The user must tune the application number of channels to match the proxy driver device tree
  * and the names of each channel must match the dma-names in the device tree for the proxy
@@ -162,10 +71,12 @@ private:
  * channels will just not be used in testing.
  */
 #define TX_CHANNEL_COUNT 1
-#define RX_CHANNEL_COUNT 1
+#define RX_CHANNEL_COUNT 2
 
-const char *tx_channel_names[] = { "dma_proxy_tx_0",  /* add unique channel names here */ };
-const char *rx_channel_names[] = { "dma_proxy_rx_0", "dma_proxy_rx_1" /* add unique channel names here */ };
+#define MAX_PKT_SIZE 64 // KB
+
+const char *tx_channel_names[] = { "dma_proxy_tx_0", /* add unique channel names here */ };
+const char *rx_channel_names[] = { "dma_proxy_rx_0", "dma_proxy_rx_1",/* add unique channel names here */ };
 
 /* Internal data which should work without tuning */
 
@@ -176,11 +87,21 @@ struct channel {
 };
 
 static int verify;
-static int test_size;
+static int test_size = MAX_PKT_SIZE * 1024;
 static volatile int stop = 0;
 int num_transfers;
 
 struct channel tx_channels[TX_CHANNEL_COUNT], rx_channels[RX_CHANNEL_COUNT];
+std::atomic<int> extra_tx_0(0);
+std::atomic<int> extra_tx_1(0);
+std::atomic<int> extra_rx(0);
+
+pcap_t *sniffer_handle;				
+struct bpf_program s_fp;
+
+pcap_t *inject_snort_handle;
+
+pcap_t *inject_egress_handle;			
 
 /*******************************************************************************************************************/
 /* Handle a control C or kill, maybe the actual signal number coming in has to be more filtered?
@@ -210,134 +131,201 @@ static uint64_t get_posix_clock_time_usec ()
  * The following function is the transmit thread to allow the transmit and the receive channels to be
  * operating simultaneously. Some of the ioctl calls are blocking so that multiple threads are required.
  */
-
 void tx_thread(struct channel *channel_ptr)
-// channel *channel_ptr is not used
 {
-	printf("start tx thread\n");
-	int i, counter = 0, buffer_id, in_progress_count = 0;
+	int i, counter = 0, buffer_id=0, in_progress_count = 0;
 	int stop_in_progress = 0;
-
-	SafeQueue<int> emptyQueue;
-	SafeQueue<int> workingQueue;
-	// initiate pcap
-	char *dev = (char*)ETH_IN_DEV;
-	char filter_exp[] = "port 22";
-	pcap_t *handle;
-	struct bpf_program fp;
-	handle = initiate_sniff_pcap(&fp, dev, filter_exp);
-	if (handle == NULL) {
-		printf("Error status\n");
-		exit(EXIT_FAILURE);
-	}
 
 	// Start all buffers being sent
 
-	for (buffer_id = 0; buffer_id < TX_BUFFER_COUNT; buffer_id += BUFFER_INCREMENT) {
-		emptyQueue.enqueue(buffer_id);
-	}
- 
-	using namespace std::chrono_literals;
-	std::thread finished_watcher([&]() {
-		while(!stop) {
-			if (!workingQueue.wait_empty(1000us)) {
-				int buffer_id = workingQueue.dequeue();
-				ioctl(channel_ptr->fd, FINISH_XFER, &buffer_id);
-				emptyQueue.enqueue(buffer_id);
-			}
-		}
-	});
+	for (counter = 0; counter < num_transfers; counter++){
 
-	while (!stop) {
+		// wait for rx to consume
+		while(!stop && extra_rx != 0){
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(100ms);
+			printf("wait on tx\n");
+		}
+
+		if (stop & !stop_in_progress) {
+			stop_in_progress = 1;
+			num_transfers = counter + RX_BUFFER_COUNT;
+		}
+
+		channel_ptr->buf_ptr[buffer_id].length = test_size;
+		
+		// if (verify)
+		// 	for (i = 0; i < test_size / sizeof(unsigned int); i++)
+		// 		channel_ptr->buf_ptr[buffer_id].buffer[i] = i + counter;
+
+		// wait for packet to come in
+		
 		struct pcap_pkthdr *header;
         const u_char *packet;
-        pcap_next_ex(handle, &header, &packet);
-
-		auto caplen = header->caplen;
-
-		int buffer_id = emptyQueue.dequeue();
-		memcpy(channel_ptr->buf_ptr[buffer_id].buffer, packet, caplen);
-		channel_ptr->buf_ptr[buffer_id].length = caplen;
-
-		workingQueue.enqueue(buffer_id);
-
-		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
-	}
-
-	finished_watcher.join();
-	printf("tx thread finished\n");
-}
-
-void rx_thread(struct channel *channel_ptr)
-{
-	printf("start rx thread\n");
-	int in_progress_count = 0, buffer_id = 0;
-	int rx_counter = 0;
-
-	SafeQueue<int> emptyQueue;
-	SafeQueue<int> workingQueue;
-
-	// Start all buffers being received
-
-	for (buffer_id = 0; buffer_id < RX_BUFFER_COUNT; buffer_id += BUFFER_INCREMENT) {
-
-		/* Don't worry about initializing the receive buffers as the pattern used in the
-		 * transmit buffers is unique across every transfer so it should catch errors.
-		 */
-		channel_ptr->buf_ptr[buffer_id].length = BUFFER_SIZE / sizeof(unsigned int);
-
-		// ioctl(channel_ptr->fd, START_XFER, &buffer_id);
-
-		/* Handle the case of a specified number of transfers that is less than the number
-		 * of buffers
-		 */
-		// if (++in_progress_count >= num_transfers)
-		// 	break;
-		emptyQueue.enqueue(buffer_id);
-	}
-
-	using namespace std::chrono_literals;
-	std::thread finished_watcher([&]() {
-		while(!stop) {
-			if (!workingQueue.wait_empty(1000us)) {
-				// retrieve packet
-				u_char packet[BUFFER_SIZE / sizeof(unsigned int)];
-
-				int buffer_id = workingQueue.dequeue();
-				ioctl(channel_ptr->fd, FINISH_XFER, &buffer_id);
-
-				if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR) {
-					printf("Proxy number %llu error: %d\n", channel_ptr->tid, channel_ptr->buf_ptr[buffer_id].status);
-					printf("Proxy rx transfer error,# buffer %d, # transfers %d, # completed %d, # in progress %d\n",
-								buffer_id, num_transfers, rx_counter, in_progress_count);
-				}
-
-				memcpy(&packet, channel_ptr->buf_ptr[buffer_id].buffer, channel_ptr->buf_ptr[buffer_id].length);
-				emptyQueue.enqueue(buffer_id);
-
-				// get packet size
-				parsed_packet pp = parse_packet(packet);
-				int total_size = SIZE_ETHERNET + pp.size_ip + pp.size_tcp + pp.size_payload;
+		while(!stop){
+        	int status = pcap_next_ex(sniffer_handle, &header, &packet);
+			if (status == 1){
+				// copy to buffer
+				// printf("packet received\n");
+				memcpy(channel_ptr->buf_ptr[buffer_id].buffer, packet, header->len);
+				break;
+			}
+			if (status == 0){
+				// printf("timeout\n");
+				continue;
+			}
+			if (status == -1){
+				fprintf(stderr, "Error reading the packets: %s\n", pcap_geterr(sniffer_handle));
+				continue;
 			}
 		}
-	});
 
-	while(!stop) {
-		int buffer_id = emptyQueue.dequeue();
-		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
-		workingQueue.enqueue(buffer_id);
+		// gracefully stop: if extra_rx > 0, then just send a null packet
+		if (stop && extra_rx > 0){
+			// printf("stop and extra_rx\n");
+			memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
+		}
+		
+		ioctl(channel_ptr->fd, XFER, &buffer_id);
+	
+		if (extra_tx_0 > 0)
+			extra_tx_0 -= 1;
+		if (extra_tx_1 > 0)
+			extra_tx_1 -= 1;
+		// printf("sent %d, tx0_dept:%d, tx1_dept%d\n", counter, (int)extra_tx_0, (int)extra_tx_1);
+
+		if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR){
+			printf("Proxy tx transfer error: error_id=%d\n", channel_ptr->buf_ptr[buffer_id].status);
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
+				extra_rx++;
+				goto skip_tx;
+			}
+		}
+
+
+		skip_tx:
+		buffer_id += BUFFER_INCREMENT;
+		buffer_id %= TX_BUFFER_COUNT;
 	}
-
-
-	printf("rx thread finished");
 }
+
+void rx_thread_0(struct channel *channel_ptr)
+{
+	int in_progress_count = 0, buffer_id = 0;
+	int rx_counter = 0;
+	int status;
+	parsed_packet parsed_packet;
+	int packet_size;
+
+	for (rx_counter = 0; rx_counter < num_transfers; rx_counter++){
+
+		// wait for rx to consume
+		while(!stop && extra_tx_0 > 0){
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(100ms);
+			// printf("\twait on rx0\n");
+		}
+
+		channel_ptr->buf_ptr[buffer_id].length = test_size;
+		ioctl(channel_ptr->fd, XFER, &buffer_id);
+		if (extra_rx > 0)
+			extra_rx--;
+		// printf("recieved no. %d, rx_dept:%d->%d\n", rx_counter, b4, (int)extra_rx);
+		if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR) {
+			printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
+						num_transfers, rx_counter, in_progress_count);
+			// exit(1);
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
+				extra_tx_0++;
+				goto skip_inject;
+			}
+			return;
+		}
+		
+		// check if not null packet
+		if (memcmp(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size) == 0){
+			// printf("null packet\n");
+			goto skip_inject;
+		}
+
+		// send to snort (handle error status)
+		// get size of packet by parsing
+		parsed_packet = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
+		packet_size = SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload;
+		status = pcap_inject(inject_snort_handle, channel_ptr->buf_ptr[buffer_id].buffer, packet_size);
+		if (status == -1){
+			fprintf(stderr, "Error sending packet to snort: %s\n", pcap_geterr(inject_snort_handle));
+		}
+		
+		skip_inject:
+		buffer_id += BUFFER_INCREMENT;
+		buffer_id %= RX_BUFFER_COUNT;
+	}
+}
+
+void rx_thread_1(struct channel *channel_ptr)
+{
+	int in_progress_count = 0, buffer_id = 0;
+	int rx_counter = 0;
+	int status;
+	parsed_packet parsed_packet;
+	int packet_size;
+
+	for (rx_counter = 0; rx_counter < num_transfers; rx_counter++){
+
+		// wait for rx to consume
+		while(!stop && extra_tx_1 > 0){
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(100ms);
+			// printf("\twait on rx1\n");
+		}
+
+		channel_ptr->buf_ptr[buffer_id].length = test_size;
+		ioctl(channel_ptr->fd, XFER, &buffer_id);
+		int b4 = extra_rx;
+		if (extra_rx > 0)
+			extra_rx--;
+		// printf("recieved %d, rx_dept:%d->%d\n", rx_counter, b4, (int)extra_rx);
+		if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR) {
+			printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
+						num_transfers, rx_counter, in_progress_count);
+			// exit(1);
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
+				extra_tx_1++;
+				goto skip_inject;
+			}
+			return;
+		}
+
+		// check if not null packet
+		if (memcmp(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size) == 0){
+			// printf("null packet\n");
+			goto skip_inject;
+		}
+
+		// send to egress (handle error status)
+		// get size of packet by parsing
+		parsed_packet = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
+		packet_size = SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload;
+		status = pcap_inject(inject_egress_handle, channel_ptr->buf_ptr[buffer_id].buffer, packet_size);
+		if (status == -1){
+			fprintf(stderr, "Error sending packet to egress: %s\n", pcap_geterr(inject_egress_handle));
+		}
+		
+
+		skip_inject:
+		buffer_id += BUFFER_INCREMENT;
+		buffer_id %= RX_BUFFER_COUNT;
+	}
+}
+
 
 /*******************************************************************************************************************/
 /*
  * Setup the transmit and receive threads so that the transmit thread is low priority to help prevent it from
  * overrunning the receive since most testing is done without any backpressure to the transmit channel.
  */
-void setup_threads()
+void setup_threads(int *num_transfers)
 {
 	pthread_attr_t tattr_tx;
 	int newprio = 20, i;
@@ -354,12 +342,10 @@ void setup_threads()
 	param.sched_priority = newprio;
 	pthread_attr_setschedparam (&tattr_tx, &param);
 
-	// there is only one tx channel
-	pthread_create(&tx_channels[i].tid, &tattr_tx, (void* (*)(void*))tx_thread, (void *)&tx_channels[i]);
+	pthread_create(&rx_channels[0].tid, NULL, (void* (*)(void*))rx_thread_0, (void *)&rx_channels[0]);
+	pthread_create(&rx_channels[1].tid, NULL, (void* (*)(void*))rx_thread_1, (void *)&rx_channels[1]);
 
-	for (i = 0; i < RX_CHANNEL_COUNT; i++)
-		pthread_create(&rx_channels[i].tid, NULL, (void* (*)(void*))rx_thread, (void *)&rx_channels[i]);
-
+	pthread_create(&tx_channels[0].tid, &tattr_tx, (void* (*)(void*))tx_thread, (void *)&tx_channels[0]);
 }
 
 /*******************************************************************************************************************/
@@ -377,6 +363,40 @@ int main(int argc, char *argv[])
 	printf("DMA proxy test\n");
 
 	signal(SIGINT, sigint);
+
+	if (argc != 5) {
+		printf("Usage: dma-proxy-test <sniff_interface> <snort_v_interface> <egress_interface> <# of DMA transfers to perform> \n");
+		exit(EXIT_FAILURE);
+	}
+
+	char *s_dev, *i_dev, *e_dev;
+	s_dev = argv[1];
+	i_dev = argv[2];
+	e_dev = argv[3];
+
+	num_transfers = atoi(argv[4]);
+
+// initiate pcaps
+	// sniffer
+	sniffer_handle = initiate_sniff_pcap(&s_fp, s_dev, "");
+	if (sniffer_handle == NULL) {
+		printf("Can't initiate sniff pcap\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// snort
+	inject_snort_handle = initiate_inject_pcap(i_dev);
+	if (inject_snort_handle == NULL) {
+		printf("Can't initiate inject-snort pcap\n");
+		exit(EXIT_FAILURE);
+	}
+
+	// egress
+	inject_egress_handle = initiate_inject_pcap(e_dev);
+	if (inject_egress_handle == NULL) {
+		printf("Can't initiate inject-egress pcap\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* Open the file descriptors for each tx channel and map the kernel driver memory into user space */
 
@@ -414,7 +434,26 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	setup_threads();
+	/* Grab the start time to calculate performance then start the threads & transfers on all channels */
+
+	start_time = get_posix_clock_time_usec();
+	setup_threads(&num_transfers);
+
+	/* Do the minimum to know the transfers are done before getting the time for performance */
+
+	for (i = 0; i < RX_CHANNEL_COUNT; i++)
+		pthread_join(rx_channels[i].tid, NULL);
+
+	/* Grab the end time and calculate the performance */
+
+	end_time = get_posix_clock_time_usec();
+	time_diff = end_time - start_time;
+	mb_sec = ((1000000 / (double)time_diff) * (num_transfers * max_channel_count * (double)test_size)) / 1000000;
+
+	printf("Time: %d microseconds\n", time_diff);
+	printf("Transfer size: %d KB\n", (long long)(num_transfers) * (test_size / 1024) * max_channel_count);
+	printf("Throughput: %d MB / sec \n", mb_sec);
+
 	/* Clean up all the channels before leaving */
 
 	for (i = 0; i < TX_CHANNEL_COUNT; i++) {
