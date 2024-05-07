@@ -219,7 +219,7 @@ int parse_packet_for_length(const u_char *packet) {
 			switch (ip->ip_p) {
 				case IPPROTO_TCP:
 				case IPPROTO_UDP:
-				case IPPROTO_IP:
+				case IPPROTO_IP:{
 					// printf("IP\n");
 					int size_ip_header = ip->ip_hl*4;
 					// printf("size_ip_len: %d\n", ntohs(ip->ip_len));
@@ -228,6 +228,7 @@ int parse_packet_for_length(const u_char *packet) {
 						return -1;
 					}
 					return ntohs(ip->ip_len) + SIZE_ETHERNET;
+				}
 				default:
 					return -2;
 			}
@@ -247,8 +248,9 @@ int parse_packet_for_length(const u_char *packet) {
 		case ETHERTYPE_AT:
 		case ETHERTYPE_AARP:
 		case ETHERTYPE_IPX:
-		case ETHERTYPE_LOOPBACK:
+		case ETHERTYPE_LOOPBACK:{
 			return -2;
+		}
 		default:
 			return -1;
 	}
