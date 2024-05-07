@@ -212,7 +212,7 @@ int parse_packet_for_length(const u_char *packet) {
 	// parse ethernet
 	ethernet = (struct ether_header*)(packet);
 	switch (ntohs(ethernet->ether_type)) {
-		case ETHERTYPE_IP:
+		case ETHERTYPE_IP:{
 			// printf("IP\n");
 			// parse ip
 			struct ip *ip = (struct ip*)(packet + SIZE_ETHERNET);
@@ -221,8 +221,7 @@ int parse_packet_for_length(const u_char *packet) {
 					goto handle_ip;
 				case IPPROTO_UDP:
 					goto handle_ip;
-				case IPPROTO_IP:
-					goto handle_ip;
+				case IPPROTO_IP:{
 					handle_ip:
 					// printf("IP\n");
 					int size_ip_header = ip->ip_hl*4;
@@ -232,16 +231,19 @@ int parse_packet_for_length(const u_char *packet) {
 						return -1;
 					}
 					return ntohs(ip->ip_len) + SIZE_ETHERNET;
+				}
 				default:
 					return -2;
 			}
+		}
 		case ETHERTYPE_ARP:
 			// printf("ARP\n");
 			return SIZE_ARP + SIZE_ETHERNET;
-		case ETHERTYPE_IPV6:
+		case ETHERTYPE_IPV6:{
 			// printf("IPv6\n");
 			struct ip6_hdr *ip6 = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
 			return SIZE_ETHERNET + SIZE_IPV6_HEADER + ntohs(ip6->ip6_plen);
+		}
 		case ETHERTYPE_VLAN:
 			// printf("VLAN\n");
 			return SIZE_ETHERNET + 4;
