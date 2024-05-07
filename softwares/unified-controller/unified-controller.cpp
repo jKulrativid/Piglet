@@ -226,6 +226,7 @@ void rx_thread_0(struct channel *channel_ptr)
 	}
 }
 
+// to egress
 void rx_thread_1(struct channel *channel_ptr)
 {
 	int in_progress_count = 0, buffer_id = 0;
@@ -399,8 +400,8 @@ int main(int argc, char *argv[])
 	time_diff = end_time - start_time;
 	mb_sec = ((1000000 / (double)time_diff) * (num_transfers * max_channel_count * (double)test_size)) / 1000000;
 
-	printf("Time: %d microseconds\n", time_diff);
-	printf("Transfer size: %d KB\n", (long long)(num_transfers) * (test_size / 1024) * max_channel_count);
+	printf("Time: %ld microseconds\n", time_diff);
+	printf("Transfer size: %lld KB\n", (long long)(num_transfers) * (test_size / 1024) * max_channel_count);
 	printf("Throughput: %d MB / sec \n", mb_sec);
 
 	/* Clean up all the channels before leaving */

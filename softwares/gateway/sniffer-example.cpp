@@ -235,7 +235,6 @@ int main(int argc, char **argv)
 	printf("waiting for packet\n");
 	pcap_loop(handle, 0, got_packet_2, NULL);
 	#else
-	printf("waiting for packet\n");
     while(true) {
         struct pcap_pkthdr *header;
         const u_char *packet;
@@ -245,7 +244,7 @@ int main(int argc, char **argv)
 			break;
 		} 
 		if (status == 0) {
-			printf("Receive timeout\n");
+			// printf("Receive timeout\n");
 			continue;
 		}
         // got_packet(NULL, header, packet);
