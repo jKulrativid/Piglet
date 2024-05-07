@@ -196,7 +196,7 @@ control MyProcessing(inout headers hdr,
         if (hdr.ipv4.isValid() && hdr.udp.isValid()) {
             check_udp_rules();
         }
-        else if (hdr.ipv4.isValid && hdr.tcp.isValid()) {
+        else if (hdr.ipv4.isValid() && hdr.tcp.isValid()) {
             check_tcp_rules();
         }
         else {
