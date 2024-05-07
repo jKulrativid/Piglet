@@ -92,9 +92,6 @@ static volatile int stop = 0;
 int num_transfers;
 
 struct channel tx_channels[TX_CHANNEL_COUNT], rx_channels[RX_CHANNEL_COUNT];
-std::atomic<int> extra_tx_0(0);
-std::atomic<int> extra_tx_1(0);
-std::atomic<int> extra_rx(0);
 
 pcap_t *sniffer_handle;				
 struct bpf_program s_fp;
@@ -138,25 +135,13 @@ void tx_thread(struct channel *channel_ptr)
 
 	// Start all buffers being sent
 
-	for (counter = 0; counter < num_transfers; counter++){
-
-		// wait for rx to consume
-		while(!stop && extra_rx != 0){
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(100ms);
-			printf("wait on tx\n");
-		}
+	while(!stop){
 
 		if (stop & !stop_in_progress) {
 			stop_in_progress = 1;
 			num_transfers = counter + RX_BUFFER_COUNT;
 		}
-
-		channel_ptr->buf_ptr[buffer_id].length = test_size;
-		
-		// if (verify)
-		// 	for (i = 0; i < test_size / sizeof(unsigned int); i++)
-		// 		channel_ptr->buf_ptr[buffer_id].buffer[i] = i + counter;
+	
 
 		// wait for packet to come in
 		
@@ -168,6 +153,7 @@ void tx_thread(struct channel *channel_ptr)
 				// copy to buffer
 				// printf("packet received\n");
 				memcpy(channel_ptr->buf_ptr[buffer_id].buffer, packet, header->len);
+				channel_ptr->buf_ptr[buffer_id].length = test_size;
 				break;
 			}
 			if (status == 0){
@@ -179,36 +165,20 @@ void tx_thread(struct channel *channel_ptr)
 				continue;
 			}
 		}
-
-		// gracefully stop: if extra_rx > 0, then just send a null packet
-		if (stop && extra_rx > 0){
-			// printf("stop and extra_rx\n");
-			memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
-		}
 		
 		ioctl(channel_ptr->fd, XFER, &buffer_id);
-	
-		if (extra_tx_0 > 0)
-			extra_tx_0 -= 1;
-		if (extra_tx_1 > 0)
-			extra_tx_1 -= 1;
-		// printf("sent %d, tx0_dept:%d, tx1_dept%d\n", counter, (int)extra_tx_0, (int)extra_tx_1);
 
 		if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR){
 			printf("Proxy tx transfer error: error_id=%d\n", channel_ptr->buf_ptr[buffer_id].status);
-			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
-				extra_rx++;
-				goto skip_tx;
-			}
 		}
 
 
-		skip_tx:
 		buffer_id += BUFFER_INCREMENT;
 		buffer_id %= TX_BUFFER_COUNT;
 	}
 }
 
+// to snort
 void rx_thread_0(struct channel *channel_ptr)
 {
 	int in_progress_count = 0, buffer_id = 0;
@@ -216,37 +186,31 @@ void rx_thread_0(struct channel *channel_ptr)
 	int status;
 	parsed_packet parsed_packet;
 	int packet_size;
+	int sleep_time_ms = 50;
 
-	for (rx_counter = 0; rx_counter < num_transfers; rx_counter++){
-
-		// wait for rx to consume
-		while(!stop && extra_tx_0 > 0){
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(100ms);
-			// printf("\twait on rx0\n");
-		}
+	while(!stop){
 
 		channel_ptr->buf_ptr[buffer_id].length = test_size;
-		ioctl(channel_ptr->fd, XFER, &buffer_id);
-		if (extra_rx > 0)
-			extra_rx--;
-		// printf("recieved no. %d, rx_dept:%d->%d\n", rx_counter, b4, (int)extra_rx);
-		if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR) {
-			printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
-						num_transfers, rx_counter, in_progress_count);
-			// exit(1);
-			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
-				extra_tx_0++;
-				goto skip_inject;
-			}
-			return;
-		}
+		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
 		
-		// check if not null packet
-		if (memcmp(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size) == 0){
-			// printf("null packet\n");
-			goto skip_inject;
+		while(!stop){
+			ioctl(channel_ptr->fd, FINISH_XFER, &buffer_id);
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_NO_ERROR) {
+				break;
+			} 
+			else {
+				if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
+					// printf("timeout\n");
+					std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time_ms));
+					continue;
+				}
+				printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
+							num_transfers, rx_counter, in_progress_count);
+				// exit(1);
+				return;
+			}
 		}
+
 
 		// send to snort (handle error status)
 		// get size of packet by parsing
@@ -257,7 +221,6 @@ void rx_thread_0(struct channel *channel_ptr)
 			fprintf(stderr, "Error sending packet to snort: %s\n", pcap_geterr(inject_snort_handle));
 		}
 		
-		skip_inject:
 		buffer_id += BUFFER_INCREMENT;
 		buffer_id %= RX_BUFFER_COUNT;
 	}
@@ -271,36 +234,24 @@ void rx_thread_1(struct channel *channel_ptr)
 	parsed_packet parsed_packet;
 	int packet_size;
 
-	for (rx_counter = 0; rx_counter < num_transfers; rx_counter++){
-
-		// wait for rx to consume
-		while(!stop && extra_tx_1 > 0){
-			using namespace std::chrono_literals;
-			std::this_thread::sleep_for(100ms);
-			// printf("\twait on rx1\n");
-		}
+	while(!stop){
 
 		channel_ptr->buf_ptr[buffer_id].length = test_size;
-		ioctl(channel_ptr->fd, XFER, &buffer_id);
-		int b4 = extra_rx;
-		if (extra_rx > 0)
-			extra_rx--;
-		// printf("recieved %d, rx_dept:%d->%d\n", rx_counter, b4, (int)extra_rx);
-		if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_NO_ERROR) {
-			printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
-						num_transfers, rx_counter, in_progress_count);
-			// exit(1);
-			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
-				extra_tx_1++;
-				goto skip_inject;
+		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
+		
+		while(!stop){
+			ioctl(channel_ptr->fd, FINISH_XFER, &buffer_id);
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_NO_ERROR) {
+				break;
+			} 
+			else {
+				if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
+					// printf("timeout\n");
+					continue;
+				}
+				printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
+							num_transfers, rx_counter, in_progress_count);
 			}
-			return;
-		}
-
-		// check if not null packet
-		if (memcmp(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size) == 0){
-			// printf("null packet\n");
-			goto skip_inject;
 		}
 
 		// send to egress (handle error status)
@@ -312,8 +263,6 @@ void rx_thread_1(struct channel *channel_ptr)
 			fprintf(stderr, "Error sending packet to egress: %s\n", pcap_geterr(inject_egress_handle));
 		}
 		
-
-		skip_inject:
 		buffer_id += BUFFER_INCREMENT;
 		buffer_id %= RX_BUFFER_COUNT;
 	}
