@@ -172,15 +172,37 @@ control MyProcessing(inout headers hdr,
     }
 
     action check_source_ipv4() {
-        is_safe = is_safe || (hdr.ipv4.isValid() && hdr.ipv4.src == white_listed_ip);
+        is_safe = is_safe || (hdr.ipv4.isValid() && hdr.ipv4.src == 0x0a9312c8);
     }
 
     action check_whitelist() {
         check_source_ipv4();
     }
 
+    action check_ip_rules() {
+
+    }
+
+    action check_udp_rules() {
+
+    }
+
+    action check_tcp_rules() {
+
+    }
+
     apply {
         check_whitelist();
+        if (hdp.ipv4.isValid() && hdr.udp.isValid()) {
+            check_udp_rules();
+        }
+        else if (hdp.ipv4.isValid && hdr.tcp.isValid()) {
+            check_tcp_rules();
+        }
+        else {
+            check_ip_rules();
+        }
+
         if (is_safe) {
             pass_to_safe();
         } else {
