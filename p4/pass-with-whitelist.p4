@@ -126,7 +126,7 @@ struct headers {
 
 // User metadata structure
 struct metadata {
-    bit<4> redirect_path; // Downstream circuit will use this port to forward the packet
+    bit<1> redirect_path; // Downstream circuit will use this port to forward the packet
 }
 
 // User-defined errors 
