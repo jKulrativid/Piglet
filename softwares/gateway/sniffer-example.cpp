@@ -188,7 +188,7 @@ void got_packet_2(u_char *args, const struct pcap_pkthdr *header, const u_char *
 	printf("size_eth = %d, ", SIZE_ETHERNET);
 	printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", parsed_packet.size_ip, parsed_packet.size_tcp, parsed_packet.size_payload, 
 																			SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload);
-	print_payload(packet, SIZE_ETHERNET + header->caplen);
+	print_payload(packet, header->len);
 	printf("\n");
 	#endif
 	printf("waiting for packet\n");
