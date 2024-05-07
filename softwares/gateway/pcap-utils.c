@@ -10,7 +10,14 @@
 
 #include <netinet/ether.h>
 #include <netinet/ip.h>
+#include <netinet/ip6.h>
 #include <netinet/tcp.h>
+#include <netinet/udp.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/igmp.h>
+#include <netinet/icmp6.h>
+
+#include <net/ethernet.h>
 
 #include <arpa/inet.h>
 
@@ -18,6 +25,8 @@
 
 /* default snap length (maximum bytes per packet to capture) */
 #define SNAP_LEN 1518
+#define SIZE_ARP 28 + 18 // 28 bytes for ARP header, 18 bytes for padding to make it 46 bytes
+#define SIZE_IPV6_HEADER 40
 
 #define PCAP_TIMEOUT 1000 // doesn't seems useful for a non-blocking mode
 
@@ -134,6 +143,7 @@ parsed_packet get_empty_packet() {
 	return parsed_packet;
 }
 
+// still bug but nevermind
 parsed_packet parse_packet(const u_char *packet) {
 	parsed_packet parsed_packet = get_empty_packet();
 
@@ -189,6 +199,59 @@ parsed_packet parse_packet(const u_char *packet) {
 	parsed_packet.size_payload = size_payload;
 
 	return parsed_packet;
+}
+
+/*
+return the length of the packet
+-1: error
+-2: not supported -> just fwd to snort
+*/
+int parse_packet_for_length(const u_char *packet) {
+	struct ether_header *ethernet;
+
+	// parse ethernet
+	ethernet = (struct ether_header*)(packet);
+	switch (ntohs(ethernet->ether_type)) {
+		case ETHERTYPE_IP:
+			// printf("IP\n");
+			// parse ip
+			struct ip *ip = (struct ip*)(packet + SIZE_ETHERNET);
+			switch (ip->ip_p) {
+				case IPPROTO_TCP:
+				case IPPROTO_UDP:
+				case IPPROTO_IP:
+					// printf("IP\n");
+					int size_ip_header = ip->ip_hl*4;
+					// printf("size_ip_len: %d\n", ntohs(ip->ip_len));
+					if (size_ip_header < 20) {
+						printf("   * Invalid IP header length: %u bytes\n", size_ip_header);
+						return -1;
+					}
+					return ntohs(ip->ip_len) + SIZE_ETHERNET;
+				default:
+					return -2;
+			}
+		case ETHERTYPE_ARP:
+			// printf("ARP\n");
+			return SIZE_ARP + SIZE_ETHERNET;
+		case ETHERTYPE_IPV6:
+			// printf("IPv6\n");
+			struct ip6_hdr *ip6 = (struct ip6_hdr*)(packet + SIZE_ETHERNET);
+			return SIZE_ETHERNET + SIZE_IPV6_HEADER + ntohs(ip6->ip6_plen);
+		case ETHERTYPE_VLAN:
+			// printf("VLAN\n");
+			return SIZE_ETHERNET + 4;
+		case ETHERTYPE_PUP:
+		case ETHERTYPE_SPRITE:
+		case ETHERTYPE_REVARP:
+		case ETHERTYPE_AT:
+		case ETHERTYPE_AARP:
+		case ETHERTYPE_IPX:
+		case ETHERTYPE_LOOPBACK:
+			return -2;
+		default:
+			return -1;
+	}
 }
 
 pcap_t* initiate_inject_pcap(char *dev) {

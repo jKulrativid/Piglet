@@ -23,7 +23,7 @@ run-sniffer:
 
 .PHONY: run-injector
 run-injector:
-	sudo ./injector piglet-loopback 100000
+	sudo ./injector piglet-loopback 1
 
 all-s: sniffer run-sniffer
 
@@ -45,3 +45,7 @@ setup-loopback:
 # remove-loopback:
 # 	sudo ip link delete piglet-loopback
 # 	ip link show
+
+.PHONY: test
+test: 
+	gcc -o test pcap-utils-test.c $(IMPORTED) -lpcap

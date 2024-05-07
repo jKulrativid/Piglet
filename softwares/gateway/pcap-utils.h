@@ -37,6 +37,8 @@ void cleanup_pcap(pcap_t *handle, struct bpf_program *fp);
 
 parsed_packet parse_packet(const u_char *packet);
 
+int parse_packet_for_length(const u_char *packet);
+
 parsed_packet get_empty_packet();
 
 #endif /* PCAP_UTILS_H */
