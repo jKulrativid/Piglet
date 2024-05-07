@@ -21,8 +21,8 @@
 
 #include "pcap-utils.h"
 
-#define DEBUG_LOGGING 0
-#define SHOW_RAW_PAYLOAD 0
+#define DEBUG_LOGGING 1
+#define SHOW_RAW_PAYLOAD 1
 #define USE_CALLBACK 0 // 1: use pcap_loop, 0: use pcap_next_ex
 
 int count = 0;
@@ -235,7 +235,6 @@ int main(int argc, char **argv)
 	printf("waiting for packet\n");
 	pcap_loop(handle, 0, got_packet_2, NULL);
 	#else
-	printf("waiting for packet\n");
     while(true) {
         struct pcap_pkthdr *header;
         const u_char *packet;
@@ -245,7 +244,7 @@ int main(int argc, char **argv)
 			break;
 		} 
 		if (status == 0) {
-			printf("Receive timeout\n");
+			// printf("Receive timeout\n");
 			continue;
 		}
         // got_packet(NULL, header, packet);
