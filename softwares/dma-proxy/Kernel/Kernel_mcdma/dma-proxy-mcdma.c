@@ -122,7 +122,7 @@
 
 MODULE_LICENSE("GPL");
 
-#define DRIVER_NAME 			"dma_proxy_0"
+#define DRIVER_NAME 			"dma_proxy_mcdma"
 #define TX_CHANNEL			0
 #define RX_CHANNEL			1
 #define ERROR 					-1
@@ -230,7 +230,7 @@ static void start_transfer(struct dma_proxy_channel *pchannel_p)
  */
 static void wait_for_transfer(struct dma_proxy_channel *pchannel_p)
 {
-	unsigned long timeout = msecs_to_jiffies(30);
+	unsigned long timeout = msecs_to_jiffies(3000);
 	enum dma_status status;
 	int bdindex = pchannel_p->bdindex;
 
@@ -634,13 +634,13 @@ static int dma_proxy_remove(struct platform_device *pdev)
 }
 
 static const struct of_device_id dma_proxy_of_ids[] = {
-	{ .compatible = "xlnx,dma_proxy_0",},
+	{ .compatible = "xlnx,dma_proxy_mcdma",},
 	{}
 };
 
 static struct platform_driver dma_proxy_driver = {
 	.driver = {
-		.name = "dma_proxy_driver_0",
+		.name = "dma_proxy_driver_mcdma",
 		.owner = THIS_MODULE,
 		.of_match_table = dma_proxy_of_ids,
 	},

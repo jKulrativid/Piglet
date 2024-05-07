@@ -152,7 +152,9 @@ void tx_thread(struct channel *channel_ptr)
 			if (status == 1){
 				// copy to buffer
 				// printf("packet received\n");
+				memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
 				memcpy(channel_ptr->buf_ptr[buffer_id].buffer, packet, header->len);
+				printf("pktlen:%d, pktcaplen:%d\n", header->len, header->caplen);
 				channel_ptr->buf_ptr[buffer_id].length = test_size;
 				break;
 			}
@@ -189,7 +191,7 @@ void rx_thread_0(struct channel *channel_ptr)
 	int sleep_time_ms = 50;
 
 	while(!stop){
-
+		memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
 		channel_ptr->buf_ptr[buffer_id].length = test_size;
 		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
 		
@@ -216,6 +218,9 @@ void rx_thread_0(struct channel *channel_ptr)
 		// get size of packet by parsing
 		parsed_packet = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
 		packet_size = SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload;
+		printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", parsed_packet.size_ip, parsed_packet.size_tcp, parsed_packet.size_payload, 
+																			packet_size);
+		print_payload((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer, 100);
 		status = pcap_inject(inject_snort_handle, channel_ptr->buf_ptr[buffer_id].buffer, packet_size);
 		if (status == -1){
 			fprintf(stderr, "Error sending packet to snort: %s\n", pcap_geterr(inject_snort_handle));
@@ -236,7 +241,7 @@ void rx_thread_1(struct channel *channel_ptr)
 	int packet_size;
 
 	while(!stop){
-
+		memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
 		channel_ptr->buf_ptr[buffer_id].length = test_size;
 		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
 		

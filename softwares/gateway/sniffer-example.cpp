@@ -21,8 +21,8 @@
 
 #include "pcap-utils.h"
 
-#define DEBUG_LOGGING 0
-#define SHOW_RAW_PAYLOAD 0
+#define DEBUG_LOGGING 1
+#define SHOW_RAW_PAYLOAD 1
 #define USE_CALLBACK 0 // 1: use pcap_loop, 0: use pcap_next_ex
 
 int count = 0;
