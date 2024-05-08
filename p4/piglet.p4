@@ -184,7 +184,7 @@ control MyProcessing(inout headers hdr,
     }
 
     action check_udp_rules() {
-is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 705);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.udp.src_port == 2140);
     }
 
     action check_tcp_rules() {
