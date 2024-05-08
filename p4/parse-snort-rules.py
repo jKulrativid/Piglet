@@ -6,7 +6,7 @@ import socket
 from p4_template import template
 
 HOMENET = "192.168.56.3"
-RULE_NEED = 200
+RULE_NEED = 1000
 filename="snort-3-rules/snort3-community.rules"
 
 class FiveTuples:
@@ -39,8 +39,10 @@ def generate_p4_condition(ftp : FiveTuples):
         if ftp.dst_port is not None and ftp.dst_port != "any":
             if int(ftp.dst_port) <= 65535 or int(ftp.dst_port) > 0:
                 rules.append("hdr.{}.dst_port == {}".format(ftp.proto, ftp.dst_port))
-
-    return "is_safe = is_safe || ({});".format(" && ".join(rules))
+    if len(rules) == 0:
+        raise Exception("rule do nothing")
+    return "is_safe = is_safe && !({});".format(" && ".join(rules))
+    
 
 ip_conditions = []
 tcp_conditions = []

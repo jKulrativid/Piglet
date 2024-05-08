@@ -163,7 +163,7 @@ control MyProcessing(inout headers hdr,
                      inout metadata meta, 
                      inout standard_metadata_t smeta) {{
     
-    bool is_safe = false;
+    bool is_safe = true;
     
     action pass_to_safe() {{
         meta.redirect_path = 1;
