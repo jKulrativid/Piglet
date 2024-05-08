@@ -182,23 +182,6 @@ control MyProcessing(inout headers hdr,
     }
 
     action check_ip_rules() {
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
-is_safe = is_safe && !(hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
 is_safe = is_safe && !(hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803);
     }
 

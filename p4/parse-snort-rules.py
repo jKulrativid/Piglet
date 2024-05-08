@@ -6,7 +6,7 @@ import socket
 from p4_template import template
 
 HOMENET = "192.168.56.3"
-RULE_NEED = 200
+RULE_NEED = 1000
 filename="snort-3-rules/snort3-community.rules"
 
 class FiveTuples:
@@ -80,6 +80,6 @@ with open(filename, "r") as f:
             print("error at {} : {}".format(rule_idx, e))
         rule_idx += 1
 
-with open("piglet.p4", "w") as f:
+with open("piglet-1000.p4", "w") as f:
     new_p4 = template.format(ip_rules="\n".join(ip_conditions), udp_rules="\n".join(udp_conditions), tcp_rules="\n".join(tcp_conditions))
     f.write(new_p4)
