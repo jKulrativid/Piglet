@@ -5,7 +5,8 @@ import socket
 
 from p4_template import template
 
-HOMENET = "192.168.56.3"
+HOMENET = "192.168.1.56"
+OUT_FILE = "piglet-1000.4"
 RULE_NEED = 1000
 filename="snort-3-rules/snort3-community.rules"
 
@@ -16,6 +17,15 @@ class FiveTuples:
         self.dst_ip = dst_ip
         self.src_port = src_port
         self.dst_port = dst_port
+    
+    def tostring(self):
+        return "A-{}|B-{}|C-{}|D-{}|E-{}".format(
+            self.proto,
+            self.src_ip,
+            self.dst_ip,
+            self.src_port,
+            self.dst_port
+        )
 
 def ipv4_to_hex(ipv4):
     return "0x" + binascii.hexlify(socket.inet_aton(ipv4)).decode()
@@ -42,7 +52,9 @@ def generate_p4_condition(ftp : FiveTuples):
     if len(rules) == 0:
         raise Exception("rule do nothing")
     return "is_safe = is_safe && !({});".format(" && ".join(rules))
-    
+
+
+unique_checker = {"hello": 1}    
 
 ip_conditions = []
 tcp_conditions = []
@@ -62,8 +74,15 @@ with open(filename, "r") as f:
             dst_port = ph["dst_port"][1] if ph["dst_port"] else None
 
             ftp = FiveTuples(proto, src_ip, dst_ip, src_port, dst_port)
+            
+            unique_checker[ftp.tostring()] = 1
 
             cond = generate_p4_condition(ftp)
+
+            if unique_checker.get(cond, 0) == 1:
+                raise Exception("redundant rules")
+            
+            unique_checker[cond] = 1
 
             if proto == "ip":
                 ip_conditions.append(cond)
@@ -80,6 +99,6 @@ with open(filename, "r") as f:
             print("error at {} : {}".format(rule_idx, e))
         rule_idx += 1
 
-with open("piglet-1000.p4", "w") as f:
+with open(OUT_FILE, "w") as f:
     new_p4 = template.format(ip_rules="\n".join(ip_conditions), udp_rules="\n".join(udp_conditions), tcp_rules="\n".join(tcp_conditions))
     f.write(new_p4)
