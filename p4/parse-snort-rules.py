@@ -93,11 +93,11 @@ def generate_p4_condition(ftp : FiveTuples):
     
     if ftp.proto in ["tcp", "udp"]:
         if ftp.src_port is not None:
-            r = gen_port_rule(ftp.proto, "src", ftp.src_port)
+            r = gen_port_rule(ftp.proto, "src_port", ftp.src_port)
             if r != "":
                 rules.append(r)
         if ftp.dst_port is not None:
-            r = gen_port_rule(ftp.proto, "dst", ftp.dst_port)
+            r = gen_port_rule(ftp.proto, "dst_port", ftp.dst_port)
             if r != "":
                 rules.append(r)
 
