@@ -72,5 +72,5 @@ with open(filename, "r") as f:
         rule_idx += 1
 
 with open("piglet.p4", "w") as f:
-    new_p4 = template.format(ip_rules="\n".join(ip_conditions), udp_rules="\n".join(tcp_conditions), tcp_rules="\n".join(tcp_conditions))
+    new_p4 = template.format(ip_rules="\n".join(ip_conditions), udp_rules="\n".join(udp_conditions), tcp_rules="\n".join(tcp_conditions))
     f.write(new_p4)
