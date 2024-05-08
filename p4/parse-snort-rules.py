@@ -6,7 +6,7 @@ import socket
 from p4_template import template
 
 HOMENET = "192.168.56.3"
-RULE_NEED = 600
+RULE_NEED = 200
 filename="snort-3-rules/snort3-community.rules"
 
 class FiveTuples:
