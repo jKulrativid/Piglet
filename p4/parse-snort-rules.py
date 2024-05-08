@@ -5,10 +5,20 @@ import socket
 
 from p4_template import template
 
-HOMENET = "192.168.1.56"
-OUT_FILE = "piglet-1000.4"
-RULE_NEED = 1000
+OUT_FILE = "piglet-200.p4"
+RULE_NEED = 200
 filename="snort-3-rules/snort3-community.rules"
+
+ip_map = {
+    "$HOME_NET": "192.168.1.0/24",
+    "$EXTERNAL_NET": "0.0.0.0/32",
+    "any": "0.0.0.0/32"
+}
+
+port_map = {
+    "$HTTP_PORTS": "80",
+    "any": ":"
+}
 
 class FiveTuples:
     def __init__(self, proto, src_ip, dst_ip, src_port, dst_port):
@@ -30,25 +40,67 @@ class FiveTuples:
 def ipv4_to_hex(ipv4):
     return "0x" + binascii.hexlify(socket.inet_aton(ipv4)).decode()
 
+def gen_ip_rule(src_or_dst, ip):
+    if "$" in ip or ip == "any":
+        ip = ip_map.get(ip, None)
+        if ip is None:
+            raise Exception("given IP variable not found in the map")
+    
+    ip, cidr = ip.split("/")
+    if cidr == "":
+        return "hdr.ipv4.{}  == {}".format(src_or_dst, ipv4_to_hex(ip))
+    else:
+        cidr = int(cidr, 10)
+        ip = ipv4_to_hex(ip)
+        mask_binary = "1"*(32-cidr)  + "0"*cidr
+        mask_hex = hex(int(mask_binary, 2))
+        return "((hdr.ipv4.{} & {}) == {})".format(src_or_dst, mask_hex, ipv4_to_hex(ip))
+
+def gen_port_rule(proto, src_or_dst, port_desc):
+    varname = "hdr.{}.{}".format(proto, src_or_dst)
+    if "$" in port_desc or port_desc == "any":
+        port_desc = port_map.get(port_desc, None)
+        if port_desc is None:
+            raise Exception("given PORT variable not found in the map")
+    
+    ports = port_desc.split(",")
+    
+    port_cmps = []
+    for p in ports:
+        cmp = ""
+        if ":" in p:
+            rangecmp = []
+            start, end = p.split(":")
+            if start != "":
+                rangecmp.append("{} >= {}".format(varname, int(start)))
+            if end != "":
+                rangecmp.append("{} <= {}".format(varname, int(end)))
+            
+            if len(rangecmp) > 0:
+                port_cmps.append("(" + " && ".join(rangecmp) + ")")
+        else:
+            port_cmps.append("({} == {})".format(varname, int(p)))
+
+
+    return " || ".join(port_cmps)
+
 def generate_p4_condition(ftp : FiveTuples):
-    mapper = {"$HOME_NET": HOMENET, "$EXTERNAL_NET": HOMENET}
     rules = []
-    if ftp.src_ip is not None and ftp.src_ip != "any":
-        sign = "=" if ftp.src_ip != "$EXTERNAL_NET" else "!"
-        cmp_ip = ftp.src_ip if "$" not in ftp.src_ip else mapper[ftp.src_ip]
-        rules.append("hdr.ipv4.src {}= {}".format(sign, ipv4_to_hex(cmp_ip)))
-    if ftp.dst_ip is not None and ftp.dst_ip != "any":
-        sign = "=" if ftp.dst_ip != "$EXTERNAL_NET" else "!"
-        cmp_ip = ftp.dst_ip if "$" not in ftp.dst_ip else mapper[ftp.dst_ip]
-        rules.append("hdr.ipv4.dst {}= {}".format(sign, ipv4_to_hex(cmp_ip)))
+    if ftp.src_ip is not None:
+        rules.append(gen_ip_rule("src", ftp.src_ip))
+    if ftp.dst_ip is not None:
+        rules.append(gen_ip_rule("dst", ftp.dst_ip))
     
     if ftp.proto in ["tcp", "udp"]:
-        if ftp.src_port is not None and ftp.src_port != "any":
-            if int(ftp.src_port) <= 65535 or int(ftp.dst_port) > 0:
-                rules.append("hdr.{}.src_port == {}".format(ftp.proto, ftp.src_port))
-        if ftp.dst_port is not None and ftp.dst_port != "any":
-            if int(ftp.dst_port) <= 65535 or int(ftp.dst_port) > 0:
-                rules.append("hdr.{}.dst_port == {}".format(ftp.proto, ftp.dst_port))
+        if ftp.src_port is not None:
+            r = gen_port_rule(ftp.proto, "src", ftp.src_port)
+            if r != "":
+                rules.append(r)
+        if ftp.dst_port is not None:
+            r = gen_port_rule(ftp.proto, "dst", ftp.dst_port)
+            if r != "":
+                rules.append(r)
+
     if len(rules) == 0:
         raise Exception("rule do nothing")
     return "is_safe = is_safe && !({});".format(" && ".join(rules))
@@ -68,11 +120,16 @@ with open(filename, "r") as f:
             ph = Parser(line).header
 
             proto = ph["proto"]
-            src_ip = ph["source"][1] if ph["source"] else None
-            dst_ip = ph["destination"][1] if ph["destination"] else None
-            src_port = ph["src_port"][1] if ph["src_port"] else None
-            dst_port = ph["dst_port"][1] if ph["dst_port"] else None
+            src_ip = ph["source"][1] if ph["source"][0] else None
+            dst_ip = ph["destination"][1] if ph["destination"][0] else None
+            src_port = ph["src_port"][1] if ph["src_port"][0] else None
+            dst_port = ph["dst_port"][1] if ph["dst_port"][0] else None
 
+            if isinstance(src_port, list):
+                src_port = ",".join([x[1] for x in src_port])
+            if isinstance(dst_port, list):
+                dst_port = ",".join([x[1] for x in dst_port])
+            
             ftp = FiveTuples(proto, src_ip, dst_ip, src_port, dst_port)
             
             unique_checker[ftp.tostring()] = 1
