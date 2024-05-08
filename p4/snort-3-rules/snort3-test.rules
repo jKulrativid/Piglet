@@ -1,1 +1,2 @@
 alert tcp $EXTERNAL_NET any -> $HOME_NET 705 (msg:"SNMP AgentX/tcp request"; flow:stateless; reference:bugtraq,4088; reference:bugtraq,4089; reference:bugtraq,4132; reference:cve,2002-0012; reference:cve,2002-0013; classtype:attempted-recon; sid:1421; rev:11;)
+alert udp $HOME_NET 2140 -> $EXTERNAL_NET any ( msg:"MALWARE-BACKDOOR DeepThroat 3.1 Server Response"; flow:to_client; content:"Ahhhh My Mouth Is Open"; metadata:ruleset community; reference:nessus,10053; classtype:trojan-activity; sid:195; rev:15; )
