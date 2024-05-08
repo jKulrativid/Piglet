@@ -54,7 +54,7 @@ def gen_ip_rule(src_or_dst, ip):
         ip = ipv4_to_hex(ip)
         mask_binary = "1"*(32-cidr)  + "0"*cidr
         mask_hex = hex(int(mask_binary, 2))
-        return "((hdr.ipv4.{} & {}) == {})".format(src_or_dst, mask_hex, ipv4_to_hex(ip))
+        return "(hdr.ipv4.{} & {}) == {}".format(src_or_dst, mask_hex, ipv4_to_hex(ip))
 
 def gen_port_rule(proto, src_or_dst, port_desc):
     varname = "hdr.{}.{}".format(proto, src_or_dst)
@@ -103,7 +103,7 @@ def generate_p4_condition(ftp : FiveTuples):
 
     if len(rules) == 0:
         raise Exception("rule do nothing")
-    return "is_safe = is_safe && !({});".format(" && ".join(rules))
+    return "is_safe = is_safe && !({});".format(" && ".join(["(" + x + ")" for x in rules]))
 
 
 unique_checker = {"hello": 1}    
