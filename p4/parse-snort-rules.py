@@ -6,8 +6,8 @@ import socket
 from p4_template import template
 
 HOMENET = "192.168.56.3"
-
-filename="snort-3-rules/snort3-test.rules"
+RULE_NEED = 200
+filename="snort-3-rules/snort3-community.rules"
 
 class FiveTuples:
     def __init__(self, proto, src_ip, dst_ip, src_port, dst_port):
@@ -34,9 +34,11 @@ def generate_p4_condition(ftp : FiveTuples):
     
     if ftp.proto in ["tcp", "udp"]:
         if ftp.src_port is not None and ftp.src_port != "any":
-            rules.append("hdr.{}.src_port == {}".format(ftp.proto, ftp.src_port))
+            if int(ftp.src_port) <= 65535 or int(ftp.dst_port) > 0:
+                rules.append("hdr.{}.src_port == {}".format(ftp.proto, ftp.src_port))
         if ftp.dst_port is not None and ftp.dst_port != "any":
-            rules.append("hdr.{}.dst_port == {}".format(ftp.proto, ftp.dst_port))
+            if int(ftp.dst_port) <= 65535 or int(ftp.dst_port) > 0:
+                rules.append("hdr.{}.dst_port == {}".format(ftp.proto, ftp.dst_port))
 
     return "is_safe = is_safe || ({});".format(" && ".join(rules))
 
@@ -46,6 +48,7 @@ udp_conditions = []
 
 with open(filename, "r") as f:
     rule_idx = 0
+    valid_rule_cnt = 0
     for line in f.readlines():
         try:
             ph = Parser(line).header
@@ -66,6 +69,10 @@ with open(filename, "r") as f:
                 tcp_conditions.append(cond)
             elif proto == "udp":
                 udp_conditions.append(cond)
+        
+            valid_rule_cnt += 1
+            if valid_rule_cnt >= RULE_NEED:
+                break
          
         except Exception as e:
             print("error at {} : {}".format(rule_idx, e))

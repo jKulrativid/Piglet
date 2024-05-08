@@ -182,15 +182,113 @@ control MyProcessing(inout headers hdr,
     }
 
     action check_ip_rules() {
-
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803);
     }
 
     action check_udp_rules() {
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.src_port == 3344 && hdr.udp.dst_port == 3345);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.src_port == 3345 && hdr.udp.dst_port == 3344);
 is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.udp.src_port == 2140);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 31335);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 31335);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 27444);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 18753);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 20433);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 6838);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 10498);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 10498);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 10498);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.src_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.src_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 53);
+is_safe = is_safe || (hdr.udp.src_port == 19 && hdr.udp.dst_port == 7);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 161);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 9);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 518);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 635);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 635);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.udp.dst_port == 635);
     }
 
     action check_tcp_rules() {
-is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 705);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 2589);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 7597);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 20034);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 666);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 6789);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 31785);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 6969);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 666);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 666);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 5714);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 555);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 20432);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 27665);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 27665);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 27665);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 12754);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 12754);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.src_port == 15104);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 7070);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 7070);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 8080);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.src_port == 80);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 110);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 110);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 110);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 110);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 110);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 139);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 2766);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 515);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 515);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 53);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 6373);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 8080);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 9090);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.src_port == 21);
+is_safe = is_safe || (hdr.ipv4.src == 0xc0a83803 && hdr.ipv4.dst != 0xc0a83803 && hdr.tcp.dst_port == 80);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 79);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
+is_safe = is_safe || (hdr.ipv4.src != 0xc0a83803 && hdr.ipv4.dst == 0xc0a83803 && hdr.tcp.dst_port == 21);
     }
 
     apply {
