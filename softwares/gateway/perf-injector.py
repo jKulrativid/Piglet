@@ -24,9 +24,9 @@ packet2 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.111.22
 
 # sendpfast with packet1 and 2 simultaneously with different thread
 
-p1 = Process(target=sendpfast, args=(packet1, ), kwargs={"iface": "piglet-loopback", "loop": 300, "file_cache": True, "mbps": 2})
+p1 = Process(target=sendpfast, args=(packet1, ), kwargs={"iface": "piglet-loopback", "loop": 200, "file_cache": True, "mbps": 50})
 
-p2 = Process(target=sendpfast, args=(packet2, ), kwargs={"iface": "piglet-loopback", "loop": 887, "file_cache": True, "mbps": 2})
+p2 = Process(target=sendpfast, args=(packet2, ), kwargs={"iface": "piglet-loopback", "loop": 400, "file_cache": True, "mbps": 50})
 
 p1.start()
 p2.start()

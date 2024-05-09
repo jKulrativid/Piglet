@@ -5,6 +5,7 @@
 
 #include <pcap.h>
 #include <stdio.h>
+#include <iostream>
 #include <string.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -13,6 +14,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <signal.h>
+#include <chrono>
 
 #include <netinet/ether.h>
 #include <netinet/ip.h>
@@ -21,6 +23,8 @@
 #include <arpa/inet.h>
 
 #include "pcap-utils.h"
+
+typedef std::chrono::high_resolution_clock Clock;
 
 #define DEBUG_LOGGING 1
 #define SHOW_RAW_PAYLOAD 1
@@ -247,10 +251,21 @@ int main(int argc, char **argv)
 	pcap_loop(handle, 0, got_packet_2, NULL);
 	#else
 
-	int pkt1_length = 1053;
-	int count_pkt1 = 0;
-	int pkt2_length = 253;
-	int count_pkt2 = 0;
+	// int pkt1_length = 1053;
+	// int count_pkt1 = 0;
+	// int pkt2_length = 253;
+	// int count_pkt2 = 0;
+
+	int pkt_lengths[] = {1053, 253};
+	int pkt_counts[] = {0, 0};
+	int pkt_requireds[] = {200, 400};
+	bool pkt_completes[] = {false, false};
+	int COUNT_CASES = 2;
+
+	bool is_timer_started = 0;
+	bool completed;
+
+	auto start_time = Clock::now();
 
     while(!stop) {
         struct pcap_pkthdr *header;
@@ -264,16 +279,71 @@ int main(int argc, char **argv)
 			// printf("Receive timeout\n");
 			continue;
 		}
-        // got_packet(NULL, header, packet);
-		if (header->len == pkt1_length){
-			printf("packet1 no.:%d\n", ++count_pkt1);
+
+		// if (header->len == pkt1_length){
+		// 	printf("packet1 no.:%d\n", ++count_pkt1);
+		// 	is_timer_started = true;
+		// }
+		// if (header->len == pkt2_length){
+		// 	printf("packet2 no.:%d\n", ++count_pkt2);
+		// 	is_timer_started = true;
+		// }
+		for (int i = 0; i < COUNT_CASES; i++) {
+			if (header->len == pkt_lengths[i]) {
+				printf("packet%d no.:%d\n", i+1, ++pkt_counts[i]);
+				if (!is_timer_started){
+					is_timer_started = true;
+					start_time = Clock::now();
+					printf("timer begin\n");
+				}
+
+				if (pkt_counts[i] == pkt_requireds[i]) {
+					pkt_completes[i] = true;
+				}
+			}
 		}
-		if (header->len == pkt2_length){
-			printf("packet2 no.:%d\n", ++count_pkt2);
+
+		completed = true;
+		for (int i = 0; i < COUNT_CASES; i++) {
+			if (!pkt_completes[i]) {
+				completed = false;
+				break;
+			}
 		}
+		if (completed) goto exit_loop;
+
+
     }
-	printf("overall pkt1 count = %d\n", count_pkt1);
-	printf("overall pkt2 count = %d\n", count_pkt2);
+	exit_loop:
+	auto end_time = Clock::now();
+	// duration nanosecond
+	auto duration = (end_time - start_time);
+	double dur_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1e9;
+	std::cout << "Duration: " << dur_seconds << " s, " << std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() << " ns\n"; 
+
+	for (int i = 0; i < COUNT_CASES; i++) {
+		printf("overall pkt%d count = %d\n", i+1, pkt_counts[i]);
+	}
+
+	int bytes_transferred = 0;
+	for (int i = 0; i < COUNT_CASES; i++) {
+		bytes_transferred += pkt_counts[i] * pkt_lengths[i];
+	}
+	printf("Total bytes transferred: %d\n", bytes_transferred);
+
+	double throughput = ((double)bytes_transferred) * 8 / dur_seconds; // in bits per second
+	// printf("Throughput: %llf bps\n", throughput);
+	// printf("Throughput: %llf Kbps\n", throughput / 1000);
+	// printf("Throughput: %llf Mbps\n", throughput / 1000000);
+
+	std::cout << "Throughput: " << throughput << " bps\n";
+	std::cout << "Throughput: " << throughput / 1000 << " Kbps\n";
+	std::cout << "Throughput: " << throughput / 1000000 << " Mbps\n";
+
+	// printf("overall pkt1 count = %d\n", count_pkt1);
+	// printf("overall pkt2 count = %d\n", count_pkt2);
+
+
 	#endif
 
     cleanup_pcap(handle, &fp);
