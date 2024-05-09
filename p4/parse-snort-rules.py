@@ -5,12 +5,12 @@ import socket
 
 from p4_template import template
 
-OUT_FILE = "piglet-all.p4"
+OUT_FILE = "piglet-drop.p4"
 RULE_NEED = 250
-filename="ruleset/commu.rules"
+filename="ruleset/droprule.rules"
 
 ip_map = {
-    "$HOME_NET": "192.168.1.0/24",
+    "$HOME_NET": "192.168.1.56/24",
     "$EXTERNAL_NET": "0.0.0.0/0",
     "any": "0.0.0.0/0"
 }
