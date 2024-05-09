@@ -5,9 +5,9 @@ import socket
 
 from p4_template import template
 
-OUT_FILE = "piglet-g4.p4"
-RULE_NEED = 10000
-filename="ruleset/rule4.rules"
+OUT_FILE = "piglet-all.p4"
+RULE_NEED = 250
+filename="ruleset/commu.rules"
 
 ip_map = {
     "$HOME_NET": "192.168.1.0/24",
@@ -52,7 +52,7 @@ def gen_ip_rule(src_or_dst, ip):
     else:
         cidr = int(cidr, 10)
         ip = ipv4_to_hex(ip)
-        mask_binary = "1"*(32-cidr)  + "0"*cidr
+        mask_binary = "1"*(cidr)  + "0"*(32-cidr)
         mask_hex = hex(int(mask_binary, 2))
         return "(hdr.ipv4.{} & {}) == {}".format(src_or_dst, mask_hex, ipv4_to_hex(ip))
 
