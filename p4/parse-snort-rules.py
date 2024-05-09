@@ -5,9 +5,9 @@ import socket
 
 from p4_template import template
 
-OUT_FILE = "piglet-200.p4"
-RULE_NEED = 200
-filename="snort-3-rules/snort3-community.rules"
+OUT_FILE = "piglet-g4.p4"
+RULE_NEED = 10000
+filename="ruleset/rule4.rules"
 
 ip_map = {
     "$HOME_NET": "192.168.1.0/24",
@@ -155,6 +155,8 @@ with open(filename, "r") as f:
         except Exception as e:
             print("error at {} : {}".format(rule_idx, e))
         rule_idx += 1
+    
+    print("total rules generated:", valid_rule_cnt)
 
 with open(OUT_FILE, "w") as f:
     new_p4 = template.format(ip_rules="\n".join(ip_conditions), udp_rules="\n".join(udp_conditions), tcp_rules="\n".join(tcp_conditions))
