@@ -23,7 +23,7 @@ run-sniffer:
 
 .PHONY: run-injector
 run-injector:
-	sudo ./injector piglet-loopback 1
+	sudo ./injector piglet-loopback 100000
 
 all-s: sniffer run-sniffer
 
@@ -46,6 +46,15 @@ setup-loopback:
 # 	sudo ip link delete piglet-loopback
 # 	ip link show
 
-.PHONY: test
-test: 
-	gcc -o test pcap-utils-test.c $(IMPORTED) -lpcap
+.PHONY: perf-sniffer
+perf-sniffer:
+	g++ -o perf-sniffer perf-sniffer.cpp $(IMPORTED) -lpcap
+
+run-perf-sniffer:
+	sudo ./perf-sniffer piglet-loopback ""
+
+all-perf-s: perf-sniffer run-perf-sniffer
+
+.PHONY: all-perf-i
+all-perf-i: 
+	sudo python3 perf-injector.py
