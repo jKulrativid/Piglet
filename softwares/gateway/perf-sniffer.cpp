@@ -21,6 +21,7 @@
 #include <netinet/tcp.h>
 
 #include <arpa/inet.h>
+#include <thread>
 
 #include "pcap-utils.h"
 
@@ -258,7 +259,7 @@ int main(int argc, char **argv)
 
 	int pkt_lengths[] = {1053, 253};
 	int pkt_counts[] = {0, 0};
-	int pkt_requireds[] = {200, 400};
+	int pkt_requireds[] = {20000, 40000};
 	bool pkt_completes[] = {false, false};
 	int COUNT_CASES = 2;
 
@@ -277,6 +278,7 @@ int main(int argc, char **argv)
 		} 
 		if (status == 0) {
 			// printf("Receive timeout\n");
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 			continue;
 		}
 

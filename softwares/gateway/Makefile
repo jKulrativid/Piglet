@@ -51,7 +51,7 @@ perf-sniffer:
 	g++ -o perf-sniffer perf-sniffer.cpp $(IMPORTED) -lpcap
 
 run-perf-sniffer:
-	sudo ./perf-sniffer piglet-loopback ""
+	sudo ./perf-sniffer eth0 ""
 
 all-perf-s: perf-sniffer run-perf-sniffer
 

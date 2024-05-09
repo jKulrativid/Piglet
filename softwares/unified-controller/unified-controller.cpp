@@ -1,45 +1,3 @@
-/**
- * Copyright (C) 2021 Xilinx, Inc
- *
- * Licensed under the Apache License, Version 2.0 (the "License"). You may
- * not use this file except in compliance with the License. A copy of the
- * License is located at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
-
-/* DMA Proxy Test Application
- *
- * This application is intended to be used with the DMA Proxy device driver. It provides
- * an example application showing how to use the device driver to do user space DMA
- * operations.
- *
- * The driver allocates coherent memory which is non-cached in a s/w coherent system
- * or cached in a h/w coherent system.
- *
- * Transmit and receive buffers in that memory are mapped to user space such that the
- * application can send and receive data using DMA channels (transmit and receive).
- *
- * It has been tested with AXI DMA and AXI MCDMA systems with transmit looped back to
- * receive. Note that the receive channel of the AXI DMA throttles the transmit with
- * a loopback while this is not the case with AXI MCDMA.
- *
- * Build information: The pthread library is required for linking. Compiler optimization
- * makes a very big difference in performance with -O3 being good performance and
- * -O0 being very low performance.
- *
- * The user should tune the number of channels and channel names to match the device
- * tree.
- *
- * More complete documentation is contained in the device driver (dma-proxy.c).
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -132,6 +90,9 @@ void tx_thread(struct channel *channel_ptr)
 {
 	int i, counter = 0, buffer_id=0, in_progress_count = 0;
 	int stop_in_progress = 0;
+	int check_len = 0;
+	int status;
+	int sleep_time_ms = 50;
 
 	// Start all buffers being sent
 
@@ -152,14 +113,25 @@ void tx_thread(struct channel *channel_ptr)
 			if (status == 1){
 				// copy to buffer
 				// printf("packet received\n");
+				check_len = parse_packet_for_length(packet);
+				if (check_len == -1)
+					continue;
+				if (check_len == -2){
+					// send to snort right away
+					status = pcap_inject(inject_snort_handle, packet, header->len);
+					if (status == -1){
+						fprintf(stderr, "Error sending packet to egress: %s\n", pcap_geterr(inject_snort_handle));
+					}
+				}
 				memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
 				memcpy(channel_ptr->buf_ptr[buffer_id].buffer, packet, header->len);
-				printf("pktlen:%d, pktcaplen:%d\n", header->len, header->caplen);
+				printf("parsedlen:%d, pktlen:%d, pktcaplen:%d\n",check_len, header->len, header->caplen);
 				channel_ptr->buf_ptr[buffer_id].length = test_size;
 				break;
 			}
 			if (status == 0){
 				// printf("timeout\n");
+				std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time_ms));
 				continue;
 			}
 			if (status == -1){
@@ -186,7 +158,6 @@ void rx_thread_0(struct channel *channel_ptr)
 	int in_progress_count = 0, buffer_id = 0;
 	int rx_counter = 0;
 	int status;
-	parsed_packet parsed_packet;
 	int packet_size;
 	int sleep_time_ms = 50;
 
@@ -216,11 +187,11 @@ void rx_thread_0(struct channel *channel_ptr)
 
 		// send to snort (handle error status)
 		// get size of packet by parsing
-		parsed_packet = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
-		packet_size = SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload;
-		printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", parsed_packet.size_ip, parsed_packet.size_tcp, parsed_packet.size_payload, 
-																			packet_size);
-		print_payload((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer, 100);
+		packet_size = parse_packet_for_length(channel_ptr->buf_ptr[buffer_id].buffer);
+		printf("rx0 len=%d\n", packet_size);
+		print_payload(channel_ptr->buf_ptr[buffer_id].buffer, 100);
+		// printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", parsed_packet.size_ip, parsed_packet.size_tcp, parsed_packet.size_payload, 
+		// 																	packet_size);
 		status = pcap_inject(inject_snort_handle, channel_ptr->buf_ptr[buffer_id].buffer, packet_size);
 		if (status == -1){
 			fprintf(stderr, "Error sending packet to snort: %s\n", pcap_geterr(inject_snort_handle));
@@ -237,8 +208,8 @@ void rx_thread_1(struct channel *channel_ptr)
 	int in_progress_count = 0, buffer_id = 0;
 	int rx_counter = 0;
 	int status;
-	parsed_packet parsed_packet;
 	int packet_size;
+	int sleep_time_ms = 50;
 
 	while(!stop){
 		memset(channel_ptr->buf_ptr[buffer_id].buffer, 0, test_size);
@@ -253,6 +224,7 @@ void rx_thread_1(struct channel *channel_ptr)
 			else {
 				if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
 					// printf("timeout\n");
+					std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time_ms));
 					continue;
 				}
 				printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
@@ -262,8 +234,9 @@ void rx_thread_1(struct channel *channel_ptr)
 
 		// send to egress (handle error status)
 		// get size of packet by parsing
-		parsed_packet = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
-		packet_size = SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload;
+		packet_size = parse_packet_for_length(channel_ptr->buf_ptr[buffer_id].buffer);
+		printf("rx1 len=%d\n", packet_size);
+		print_payload(channel_ptr->buf_ptr[buffer_id].buffer, 100);
 		status = pcap_inject(inject_egress_handle, channel_ptr->buf_ptr[buffer_id].buffer, packet_size);
 		if (status == -1){
 			fprintf(stderr, "Error sending packet to egress: %s\n", pcap_geterr(inject_egress_handle));
