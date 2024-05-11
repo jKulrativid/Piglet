@@ -10,7 +10,7 @@ RULE_NEED = 250
 filename="ruleset/droprule.rules"
 
 ip_map = {
-    "$HOME_NET": "192.168.1.56/24",
+    "$HOME_NET": "192.168.1.0/24",
     "$EXTERNAL_NET": "0.0.0.0/0",
     "any": "0.0.0.0/0"
 }
