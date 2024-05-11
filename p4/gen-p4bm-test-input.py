@@ -2,8 +2,21 @@ from scapy.all import *
 
 import binascii
 
-def to_hex(pkt) -> str:
-	return binascii.hexlify(raw(pkt)).decode('ascii')
+def to_p4bm(pkt) -> str:
+	packet_hex = binascii.hexlify(raw(pkt)).decode('ascii')
+
+	packet_p4bm = ""
+
+	ff = 0
+	for ch in packet_hex:
+		packet_p4bm += ch
+		if ff:
+			packet_p4bm += " "
+			ff = 0
+		else:
+			ff = 1
+			
+	return packet_p4bm+";\n"
 
 
 test_inputs = [
@@ -13,5 +26,5 @@ test_inputs = [
 
 with open("traffic_in.user", "w") as fout:
 	for pkt in test_inputs:
-		fout.write(to_hex(pkt) + ";\n")
+		fout.write(to_p4bm(pkt))
 #print(test_inputs[0].hexraw())
