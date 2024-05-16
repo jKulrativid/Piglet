@@ -52,10 +52,8 @@ void
 print_app_usage(void)
 {
 
-	printf("Usage: %s [interface]\n", APP_NAME);
-	printf("\n");
-	printf("Options:\n");
-	printf("    interface    Listen on <interface> for packets.\n");
+	printf("Usage: %s [interface] [filter_exp] [pkt1_length] [pkt1_required] [pkt2_length] [pkt2_required] [timeout]\n", APP_NAME);
+	printf("timeout: 0 for no timeout\n");
 	printf("\n");
 
 return;
@@ -113,6 +111,7 @@ int main(int argc, char **argv)
 	char filter_exp[256];
 	int pkt_lengths[] = {0, 0};
 	int pkt_requireds[] = {0, 0};
+	int timeout = 0;
 
 	/* check for capture device name on command-line */
 	if(argc == 7) {
@@ -122,6 +121,15 @@ int main(int argc, char **argv)
 		pkt_requireds[0] = atoi(argv[4]);
 		pkt_lengths[1] = atoi(argv[5]);
 		pkt_requireds[1] = atoi(argv[6]);
+	}
+	else if (argc == 8) {
+		dev = argv[1];
+		strncpy(filter_exp, argv[2], sizeof(filter_exp));
+		pkt_lengths[0] = atoi(argv[3]);
+		pkt_requireds[0] = atoi(argv[4]);
+		pkt_lengths[1] = atoi(argv[5]);
+		pkt_requireds[1] = atoi(argv[6]);	
+		timeout = atoi(argv[7]);
 	}
 	else {
 		print_app_usage();
@@ -161,6 +169,15 @@ int main(int argc, char **argv)
 	auto start_time = Clock::now();
 	auto end_time = Clock::now();
 
+	// create a thread to stop the loop after timeout if timeout > 0
+	if (timeout > 0) {
+		std::thread t([&](){
+		std::this_thread::sleep_for(std::chrono::seconds(timeout));
+			stop = 1;
+		});
+		t.detach();
+	}
+
     while(!stop) {
         struct pcap_pkthdr *header;
         const u_char *packet;
@@ -185,7 +202,7 @@ int main(int argc, char **argv)
 		for (int i = 0; i < COUNT_CASES; i++) {
 			if (header->len == pkt_lengths[i]) {
 				// printf("packet%d no.:%d\n", i+1, ++pkt_counts[i]);
-				++pkt_counts[i];`
+				++pkt_counts[i];
 				if (!is_timer_started){
 					is_timer_started = true;
 					start_time = Clock::now();
