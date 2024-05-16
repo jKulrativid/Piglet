@@ -16,6 +16,8 @@
 #include <signal.h>
 #include <chrono>
 
+#include <thread>
+
 #include <netinet/ether.h>
 #include <netinet/ip.h>
 #include <netinet/tcp.h>
@@ -29,6 +31,7 @@ typedef std::chrono::high_resolution_clock Clock;
 #define DEBUG_LOGGING 1
 #define SHOW_RAW_PAYLOAD 1
 #define USE_CALLBACK 0 // 1: use pcap_loop, 0: use pcap_next_ex
+#define CHECK_MATCH_PACKETS 1
 
 int count = 0;
 int stop = 0;
@@ -54,113 +57,6 @@ print_app_usage(void)
 	printf("Options:\n");
 	printf("    interface    Listen on <interface> for packets.\n");
 	printf("\n");
-
-return;
-}
-
-void
-got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
-{
-
-	/* declare pointers to packet headers */
-	const struct ether_header *read_ethernet;  /* The ethernet header [1] */
-	const struct ip *read_ip;              /* The IP header */
-	const struct tcphdr *read_tcp;            /* The TCP header */
-	const u_char *payload;                    /* Packet payload */
-
-	int size_ip;
-	int size_tcp;
-	int size_payload;
-
-	#if DEBUG_LOGGING
-	static int count = 1;                   /* packet counter */
-	printf("\nPacket number %d:\n", count);
-	count++;
-	#endif
-
-	/* define ethernet header */
-	read_ethernet = (struct ether_header*)(packet);
-
-	/* define/compute ip header offset */
-	read_ip = (struct ip*)(packet + SIZE_ETHERNET);
-	size_ip = (read_ip->ip_hl)*4;
-	
-	
-	
-	#if DEBUG_LOGGING
-	if (size_ip < 20) {
-		printf("   * Invalid IP header length: %u bytes\n", size_ip);
-		return;
-	}
-
-	/* print source and destination IP addresses */
-	printf("       From: %s\n", inet_ntoa(read_ip->ip_src));
-	printf("         To: %s\n", inet_ntoa(read_ip->ip_dst));
-
-	/* determine protocol */
-	switch(read_ip->ip_p) {
-		case IPPROTO_TCP:
-			printf("   Protocol: TCP\n");
-			break;
-		case IPPROTO_UDP:
-			printf("   Protocol: UDP\n");
-			return;
-		case IPPROTO_ICMP:
-			printf("   Protocol: ICMP\n");
-			return;
-		case IPPROTO_IP:
-			printf("   Protocol: IP\n");
-			return;
-		default:
-			printf("   Protocol: unknown\n");
-			return;
-	}
-	# endif
-
-	/*
-	 *  OK, this packet is TCP.
-	 */
-
-	/* define/compute tcp header offset */
-	read_tcp = (struct tcphdr*)(packet + SIZE_ETHERNET + size_ip);
-	size_tcp = read_tcp->th_off * 4;
-	
-	#if DEBUG_LOGGING
-	if (size_tcp < 20) {
-		printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
-		return;
-	}
-
-	printf("   Src port: %d\n", ntohs(read_tcp->th_sport));
-	printf("   Dst port: %d\n", ntohs(read_tcp->th_dport));
-	#endif
-
-	/* define/compute tcp payload (segment) offset */
-	payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
-
-	/* compute tcp payload (segment) size */
-	size_payload = ntohs(read_ip->ip_len) - (size_ip + size_tcp);
-
-	/*
-	 * Print payload data; it might be binary, so don't just
-	 * treat it as a string.
-	 */
-	#if DEBUG_LOGGING
-	if (size_payload > 0) {
-		printf("   Payload (%d bytes):\n", size_payload);
-		print_payload(payload, size_payload);
-	}
-	#endif
-
-	#if SHOW_RAW_PAYLOAD
-	// print raw payload data
-	printf("Payload (%d bytes), cap(%d):\n", header->len, header->caplen);
-	printf("size_eth = %d, ", SIZE_ETHERNET);
-	printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", size_ip, size_tcp, size_payload, 
-																			SIZE_ETHERNET + size_ip + size_tcp + size_payload);
-	print_payload(packet, SIZE_ETHERNET + header->caplen);
-	printf("\n");
-	#endif
 
 return;
 }
@@ -207,27 +103,25 @@ void got_packet_2(u_char *args, const struct pcap_pkthdr *header, const u_char *
 	
 }
 
-
 int main(int argc, char **argv)
 {
 
 	signal(SIGINT, sigint);
-	printf("mode: %d\n", USE_CALLBACK);
+	std::cout << "mode: " << USE_CALLBACK << std::endl;
+	std::cout << "argc: " << argc << std::endl;
 	char *dev = NULL;			/* capture device name */
 	char filter_exp[256];
+	int pkt_lengths[] = {0, 0};
+	int pkt_requireds[] = {0, 0};
 
 	/* check for capture device name on command-line */
-	if (argc == 2) {
-		dev = argv[1];
-	}
-	else if (argc == 3) {
+	if(argc == 7) {
 		dev = argv[1];
 		strncpy(filter_exp, argv[2], sizeof(filter_exp));
-	}
-	else if (argc > 3) {
-		fprintf(stderr, "error: unrecognized command-line options\n\n");
-		print_app_usage();
-		exit(EXIT_FAILURE);
+		pkt_lengths[0] = atoi(argv[3]);
+		pkt_requireds[0] = atoi(argv[4]);
+		pkt_lengths[1] = atoi(argv[5]);
+		pkt_requireds[1] = atoi(argv[6]);
 	}
 	else {
 		print_app_usage();
@@ -255,24 +149,24 @@ int main(int argc, char **argv)
 	// int count_pkt1 = 0;
 	// int pkt2_length = 253;
 	// int count_pkt2 = 0;
-
-	int pkt_lengths[] = {1053, 253};
 	int pkt_counts[] = {0, 0};
-	int pkt_requireds[] = {200, 400};
 	bool pkt_completes[] = {false, false};
+	if (pkt_requireds[0] == 0) pkt_completes[0] = true;
+	if (pkt_requireds[1] == 0) pkt_completes[1] = true;
 	int COUNT_CASES = 2;
 
 	bool is_timer_started = 0;
 	bool completed;
 
 	auto start_time = Clock::now();
+	auto end_time = Clock::now();
 
     while(!stop) {
         struct pcap_pkthdr *header;
         const u_char *packet;
         int status = pcap_next_ex(handle, &header, &packet);
 		if (status == -1) {
-			printf("Error reading the packets: %s\n", pcap_geterr(handle));
+			// printf("Error reading the packets: %s\n", pcap_geterr(handle));
 			break;
 		} 
 		if (status == 0) {
@@ -290,7 +184,8 @@ int main(int argc, char **argv)
 		// }
 		for (int i = 0; i < COUNT_CASES; i++) {
 			if (header->len == pkt_lengths[i]) {
-				printf("packet%d no.:%d\n", i+1, ++pkt_counts[i]);
+				// printf("packet%d no.:%d\n", i+1, ++pkt_counts[i]);
+				++pkt_counts[i];`
 				if (!is_timer_started){
 					is_timer_started = true;
 					start_time = Clock::now();
@@ -300,6 +195,7 @@ int main(int argc, char **argv)
 				if (pkt_counts[i] == pkt_requireds[i]) {
 					pkt_completes[i] = true;
 				}
+				end_time = Clock::now();
 			}
 		}
 
@@ -315,7 +211,6 @@ int main(int argc, char **argv)
 
     }
 	exit_loop:
-	auto end_time = Clock::now();
 	// duration nanosecond
 	auto duration = (end_time - start_time);
 	double dur_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1e9;
@@ -343,6 +238,9 @@ int main(int argc, char **argv)
 	// printf("overall pkt1 count = %d\n", count_pkt1);
 	// printf("overall pkt2 count = %d\n", count_pkt2);
 
+	// packet per second
+	double pkt_per_second = ((double)pkt_counts[0] + pkt_counts[1]) / dur_seconds;
+	std::cout << "Packet per second: " << pkt_per_second << " pps\n";
 
 	#endif
 

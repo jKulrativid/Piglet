@@ -2,6 +2,7 @@ from multiprocessing import Process
 import os
 from scapy.all import Ether, IP, UDP
 from scapy.all import *
+import sys
 
 
 # try to send a packet to the target via an interface dev
@@ -23,7 +24,7 @@ def send_packet(dev, packet):
 
 
 
-print("Done")
+
 
 
 def info(title):
@@ -32,22 +33,68 @@ def info(title):
     print('parent process:', os.getppid())
     print('process id:', os.getpid())
 
+def pad_message(m, l):
+    TCP_LENGTH = 54
+    padding_message = "-PADDING-"
+    lm = len(m)
+    try:
+        assert TCP_LENGTH + lm <= l
+    except AssertionError:
+        print(f"Warning: Message length {lm} is too long for packet size {l}")
+    padded_len = l - (TCP_LENGTH + lm)
+    padding_message *= int(1 + padded_len/len(padding_message))
+    padded_message = m + padding_message
+    return padded_message[:(l-TCP_LENGTH)]
+
+# print(len(pad_message("helloworld", 93)), pad_message("helloworld", 93))
+assert len(pad_message("helloworld", 93)) == 93-54
+
+
 if __name__ == '__main__':
     info('main line')
+    # get cli arguments: <pkt1-size> <pkt1-repeats> <pkt2-size> <pkt2-repeats>
+    if len(sys.argv) != 7:
+        print("Usage: python3 perf-injector.py <pkt1-size> <pkt1-repeats> <pps1> <pkt2-size> <pkt2-repeats> <pps2>")
+        sys.exit(1)
+    pkt1_size = int(sys.argv[1])
+    pkt1_repeats = int(sys.argv[2])
+    pps1 = int(sys.argv[3])
+    pkt2_size = int(sys.argv[4])
+    pkt2_repeats = int(sys.argv[5])
+    pps2 = int(sys.argv[6])
 
+
+
+    # test_inputs = [
+    #     Ether(src="08:00:27:00:00:02",dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(sport=5000,dport=1234)/Raw(load="hey dude"),
+    #     Ether(src="08:00:27:00:00:02",dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(sport=5000,dport=80)/Raw(load="injected haha")
+    # ]
     # pure length 54
-    packet1 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(dport=1234)/Raw(load=b""+ b"0"*(1000-54))
-    packet2 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(dport=1234)/Raw(load=b""+ b"1"*(550-54))
+    pkt1_len = pkt1_size
+    message1 = pad_message("Harmless Packet", pkt1_len)
+    pkt2_len = pkt2_size
+    message2 = pad_message("Suspicious Packet", pkt2_len)
 
-    p1 = Process(target=sendpfast, args=(packet1, ), kwargs={"iface": "piglet-loopback", "loop": 1, "file_cache": True, "mbps": 30})
 
-    p2 = Process(target=sendpfast, args=(packet2, ), kwargs={"iface": "piglet-loopback", "loop": 1, "file_cache": True, "mbps": 30})
+    packet1 = Ether(src="08:00:27:00:00:02",dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(sport=5000,dport=1234)/Raw(load=message1)
+    packet2 = Ether(src="08:00:27:00:00:02",dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(sport=5000,dport=80)/Raw(load=message2)
+    # packet1 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(dport=1234)/Raw(load=b""+ b"0"*(102-54))
+    # packet2 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(dport=1234)/Raw(load=b""+ b"1"*(97-54))
 
-    p1.start()
-    p2.start()
+    p1 = Process(target=sendpfast, args=(packet1, ), kwargs={"iface": "en13", "loop": pkt1_repeats, "file_cache": True, "mbps": 1000, "pps": pps1})
 
-    p1.join()
-    p2.join()
+    p2 = Process(target=sendpfast, args=(packet2, ), kwargs={"iface": "en13", "loop": pkt2_repeats, "file_cache": True, "mbps": 1000, "pps": pps2})
+
+    if pkt1_repeats > 0:
+        p1.start()
+    if pkt2_repeats > 0:
+        p2.start()
+
+    if pkt1_repeats > 0:
+        p1.join()
+    if pkt2_repeats > 0:
+        p2.join()
+
 
 
 '''
