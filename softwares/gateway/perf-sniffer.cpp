@@ -1,4 +1,4 @@
-#define APP_NAME		"piglet-pcap"
+#define APP_NAME		"perf-sniffer"
 #define APP_DESC		"sniff packet from ethernet device then send to dma - derived Sniffer example using libpcap"
 #define APP_COPYRIGHT	"Copyright (c) 2005 The Tcpdump Group"
 #define APP_DISCLAIMER	"THERE IS ABSOLUTELY NO WARRANTY FOR THIS PROGRAM."
@@ -139,6 +139,9 @@ int main(int argc, char **argv)
 	// filter
     pcap_t *handle;				
     struct bpf_program fp;		
+
+	// override filter
+	sprintf(filter_exp, "");
     
     printf("handle address1: %p\n", handle);
     handle = initiate_sniff_pcap(&fp, dev, filter_exp);
@@ -250,7 +253,7 @@ int main(int argc, char **argv)
 
 	std::cout << "Throughput: " << throughput << " bps\n";
 	std::cout << "Throughput: " << throughput / 1000 << " Kbps\n";
-	std::cout << "Throughput: " << throughput / 1000000 << " Mbps\n";
+	std::cout << "Throughput(Mbps): " << throughput / 1000000 << " Mbps\n";
 
 	// printf("overall pkt1 count = %d\n", count_pkt1);
 	// printf("overall pkt2 count = %d\n", count_pkt2);

@@ -37,16 +37,24 @@ def pad_message(m, l):
     TCP_LENGTH = 54
     padding_message = "-PADDING-"
     lm = len(m)
+<<<<<<< HEAD
     try:
         assert TCP_LENGTH + lm <= l
     except AssertionError:
         print(f"Warning: Message length {lm} is too long for packet size {l}")
+=======
+    assert TCP_LENGTH + lm <= l
+>>>>>>> a97e83d (save progress)
     padded_len = l - (TCP_LENGTH + lm)
     padding_message *= int(1 + padded_len/len(padding_message))
     padded_message = m + padding_message
     return padded_message[:(l-TCP_LENGTH)]
 
+<<<<<<< HEAD
 # print(len(pad_message("helloworld", 93)), pad_message("helloworld", 93))
+=======
+print(len(pad_message("helloworld", 93)), pad_message("helloworld", 93))
+>>>>>>> a97e83d (save progress)
 assert len(pad_message("helloworld", 93)) == 93-54
 
 
@@ -80,6 +88,7 @@ if __name__ == '__main__':
     packet2 = Ether(src="08:00:27:00:00:02",dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(sport=5000,dport=80)/Raw(load=message2)
     # packet1 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(dport=1234)/Raw(load=b""+ b"0"*(102-54))
     # packet2 = Ether(dst="08:00:27:00:00:01")/IP(src="10.147.18.200", dst="192.168.1.56")/TCP(dport=1234)/Raw(load=b""+ b"1"*(97-54))
+<<<<<<< HEAD
 
     p1 = Process(target=sendpfast, args=(packet1, ), kwargs={"iface": "en13", "loop": pkt1_repeats, "file_cache": True, "mbps": 1000, "pps": pps1})
 
@@ -95,6 +104,18 @@ if __name__ == '__main__':
     if pkt2_repeats > 0:
         p2.join()
 
+=======
+
+    p1 = Process(target=sendpfast, args=(packet1, ), kwargs={"iface": "enx2887ba3e44aa", "loop": 1000, "file_cache": True, "mbps": 1000, "pps": 170_000})
+
+    p2 = Process(target=sendpfast, args=(packet2, ), kwargs={"iface": "enx2887ba3e44aa", "loop": 1, "file_cache": True, "mbps": 1000})
+
+    p1.start()
+    # p2.start()
+
+    p1.join()
+    # p2.join()
+>>>>>>> a97e83d (save progress)
 
 
 '''

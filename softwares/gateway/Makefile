@@ -19,7 +19,7 @@ clean:
 
 .PHONY: run-sniffer
 run-sniffer:
-	sudo ./sniffer piglet-loopback ""
+	sudo ./sniffer enx2887ba3e44aa ""
 
 .PHONY: run-injector
 run-injector:
@@ -48,10 +48,11 @@ setup-loopback:
 
 .PHONY: perf-sniffer
 perf-sniffer:
-	g++ -o perf-sniffer perf-sniffer.cpp $(IMPORTED) -lpcap
+	cat perf-sniffer.cpp | grep argc
+	g++ -O2 -o perf-sniffer perf-sniffer.cpp $(IMPORTED) -lpcap
 
 run-perf-sniffer:
-	sudo ./perf-sniffer piglet-loopback ""
+	sudo ./perf-sniffer enx2887ba3e44aa "" 101 1000 0 0
 
 all-perf-s: perf-sniffer run-perf-sniffer
 

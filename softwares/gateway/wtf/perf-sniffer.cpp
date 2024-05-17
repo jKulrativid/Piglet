@@ -1,0 +1,614 @@
+#define APP_NAME		"piglet-pcap"
+#define APP_DESC		"sniff packet from ethernet device then send to dma - derived Sniffer example using libpcap"
+#define APP_COPYRIGHT	"Copyright (c) 2005 The Tcpdump Group"
+#define APP_DISCLAIMER	"THERE IS ABSOLUTELY NO WARRANTY FOR THIS PROGRAM."
+
+#include <pcap.h>
+#include <stdio.h>
+#include <iostream>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <chrono>
+
+#include <thread>
+
+#include <netinet/ether.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+
+#include <arpa/inet.h>
+
+#include "pcap-utils.h"
+
+typedef std::chrono::high_resolution_clock Clock;
+
+#define DEBUG_LOGGING 1
+#define SHOW_RAW_PAYLOAD 1
+#define USE_CALLBACK 0 // 1: use pcap_loop, 0: use pcap_next_ex
+#define CHECK_MATCH_PACKETS 1
+
+int count = 0;
+int stop = 0;
+
+
+void sigint(int a)
+{
+	stop = 1;
+}
+
+void
+print_app_usage(void);
+
+/*
+ * print help text
+ */
+void
+print_app_usage(void)
+{
+
+	printf("Usage: %s [interface]\n", APP_NAME);
+	printf("\n");
+	printf("Options:\n");
+	printf("    interface    Listen on <interface> for packets.\n");
+	printf("\n");
+
+return;
+}
+
+void got_packet_2(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+	printf("got packet no.:%d\n", ++count);
+	parsed_packet parsed_packet = parse_packet(packet);
+	
+	#if DEBUG_LOGGING
+	static int count = 1;                   /* packet counter */
+	printf("\nPacket number %d:\n", count);
+	count++;
+
+	printf("MAC src: %s\n", ether_ntoa((struct ether_addr *)parsed_packet.ethernet->ether_shost));
+	printf("MAC dst: %s\n", ether_ntoa((struct ether_addr *)parsed_packet.ethernet->ether_dhost));
+
+	if (parsed_packet.size_ip != 0) {
+		printf("IP src: %s\n", inet_ntoa(parsed_packet.ip->ip_src));
+		printf("IP dst: %s\n", inet_ntoa(parsed_packet.ip->ip_dst));
+		printf("IP protocol: %d\n", parsed_packet.ip->ip_p);
+	}
+
+	if (parsed_packet.size_tcp != 0) {
+		printf("TCP src port: %d\n", ntohs(parsed_packet.tcp->th_sport));
+		printf("TCP dst port: %d\n", ntohs(parsed_packet.tcp->th_dport));
+	}
+
+	if (parsed_packet.size_payload != 0) {
+		printf("Payload (%d bytes):\n", parsed_packet.size_payload);
+		print_payload((const u_char *)parsed_packet.payload, parsed_packet.size_payload);
+	}
+	#endif
+
+	#if SHOW_RAW_PAYLOAD
+	// print raw payload data
+	printf("Payload (%d bytes), cap(%d):\n", header->len, header->caplen);
+	printf("size_eth = %d, ", SIZE_ETHERNET);
+	printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", parsed_packet.size_ip, parsed_packet.size_tcp, parsed_packet.size_payload, 
+																			SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload);
+	print_payload(packet, header->len);
+	printf("\n");
+	#endif
+	printf("waiting for packet\n");
+	
+}
+
+
+int main(int argc, char **argv)
+{
+
+	signal(SIGINT, sigint);
+	printf("mode: %d\n", USE_CALLBACK);
+	char *dev = NULL;			/* capture device name */
+	char filter_exp[256];
+
+	/* check for capture device name on command-line */
+	if (argc == 2) {
+		dev = argv[1];
+	}
+	else if (argc == 3) {
+		dev = argv[1];
+		strncpy(filter_exp, argv[2], sizeof(filter_exp));
+	}
+	else if (argc > 3) {
+		fprintf(stderr, "error: unrecognized command-line options\n\n");
+		print_app_usage();
+		exit(EXIT_FAILURE);
+	}
+	else {
+		print_app_usage();
+		exit(EXIT_FAILURE);
+	}
+
+	// filter
+    pcap_t *handle;				
+    struct bpf_program fp;		
+    
+    printf("handle address1: %p\n", handle);
+    handle = initiate_sniff_pcap(&fp, dev, filter_exp);
+    printf("handle address3: %p\n", handle);
+	if (handle == NULL) {
+		printf("Error status\n");
+		exit(EXIT_FAILURE);
+	}
+    
+	#if USE_CALLBACK
+	printf("waiting for packet\n");
+	pcap_loop(handle, 0, got_packet_2, NULL);
+	#else
+
+	// int pkt1_length = 1053;
+	// int count_pkt1 = 0;
+	// int pkt2_length = 253;
+	// int count_pkt2 = 0;
+
+	int pkt_lengths[] = {102, 97};
+	int pkt_counts[] = {0, 0};
+	int pkt_requireds[] = {3300000, 0};
+	bool pkt_completes[] = {false, true};
+	int COUNT_CASES = 2;
+
+	bool is_timer_started = 0;
+	bool completed;
+
+	auto start_time = Clock::now();
+	auto end_time = Clock::now();
+	int counter = 0;
+
+    while(!stop) {
+        struct pcap_pkthdr *header;
+        const u_char *packet;
+        // int status = pcap_next_ex(handle, &header, &packet);
+		// use pcap_next
+		int status = pcap_next_ex(handle, &header, &packet);
+		if (status == -1) {
+			printf("Error reading the packets: %s\n", pcap_geterr(handle));
+			break;
+		} 
+		if (status == 0) {
+			// printf("Receive timeout\n");
+			// delay 100ms
+			// std::this_thread::sleep_for(std::chrono::milliseconds(100));
+			continue;
+		}
+		counter++;
+		// continue;
+		
+		// if (header->len == pkt1_length){
+		// 	printf("packet1 no.:%d\n", ++count_pkt1);
+		// 	is_timer_started = true;
+		// }
+		// if (header->len == pkt2_length){
+		// 	printf("packet2 no.:%d\n", ++count_pkt2);
+		// 	is_timer_started = true;
+		// }
+		#if CHECK_MATCH_PACKETS
+		for (int i = 0; i < COUNT_CASES; i++) {
+			if (header->len == pkt_lengths[i] || header->caplen == pkt_lengths[i]) {
+				++pkt_counts[i];
+				// printf("packet%d no.:%d\n", i+1, pkt_counts[i]);
+				if (!is_timer_started){
+					is_timer_started = true;
+					start_time = Clock::now();
+					printf("timer begin\n");
+				}
+
+				if (pkt_counts[i] >= pkt_requireds[i]) {
+					pkt_completes[i] = true;
+				}
+				end_time = Clock::now();
+			}
+		}
+		
+
+		completed = true;
+		for (int i = 0; i < COUNT_CASES; i++) {
+			if (!pkt_completes[i]) {
+				completed = false;
+				break;
+			}
+		}
+		#else
+		if (counter == 1) start_time#define APP_NAME		"piglet-pcap"
+#define APP_DESC		"sniff packet from ethernet device then send to dma - derived Sniffer example using libpcap"
+#define APP_COPYRIGHT	"Copyright (c) 2005 The Tcpdump Group"
+#define APP_DISCLAIMER	"THERE IS ABSOLUTELY NO WARRANTY FOR THIS PROGRAM."
+
+#include <pcap.h>
+#include <stdio.h>
+#include <iostream>
+#include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <errno.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <signal.h>
+#include <chrono>
+
+#include <netinet/ether.h>
+#include <netinet/ip.h>
+#include <netinet/tcp.h>
+
+#include <arpa/inet.h>
+
+#include "pcap-utils.h"
+
+typedef std::chrono::high_resolution_clock Clock;
+
+#define DEBUG_LOGGING 1
+#define SHOW_RAW_PAYLOAD 1
+#define USE_CALLBACK 0 // 1: use pcap_loop, 0: use pcap_next_ex
+
+int count = 0;
+int stop = 0;
+
+
+void sigint(int a)
+{
+	stop = 1;
+}
+
+void
+print_app_usage(void);
+
+/*
+ * print help text
+ */
+void
+print_app_usage(void)
+{
+
+	printf("Usage: %s [interface]\n", APP_NAME);
+	printf("\n");
+	printf("Options:\n");
+	printf("<interface> <filter> <pkt1-length> <pkt1-count> <pkt2-length> <pkt2-count>\n");
+	printf("\n");
+
+return;
+}
+
+void
+got_packet(u_char *args, const struct pcap_pkthdr *header, const u_char *packet)
+{
+
+	/* declare pointers to packet headers */
+	const struct ether_header *read_ethernet;  /* The ethernet header [1] */
+	const struct ip *read_ip;              /* The IP header */
+	const struct tcphdr *read_tcp;            /* The TCP header */
+	const u_char *payload;                    /* Packet payload */
+
+	int size_ip;
+	int size_tcp;
+	int size_payload;
+
+	#if DEBUG_LOGGING
+	static int count = 1;                   /* packet counter */
+	printf("\nPacket number %d:\n", count);
+	count++;
+	#endif
+
+	/* define ethernet header */
+	read_ethernet = (struct ether_header*)(packet);
+
+	/* define/compute ip header offset */
+	read_ip = (struct ip*)(packet + SIZE_ETHERNET);
+	size_ip = (read_ip->ip_hl)*4;
+	
+	
+	
+	#if DEBUG_LOGGING
+	if (size_ip < 20) {
+		printf("   * Invalid IP header length: %u bytes\n", size_ip);
+		return;
+	}
+
+	/* print source and destination IP addresses */
+	printf("       From: %s\n", inet_ntoa(read_ip->ip_src));
+	printf("         To: %s\n", inet_ntoa(read_ip->ip_dst));
+
+	/* determine protocol */
+	switch(read_ip->ip_p) {
+		case IPPROTO_TCP:
+			printf("   Protocol: TCP\n");
+			break;
+		case IPPROTO_UDP:
+			printf("   Protocol: UDP\n");
+			return;
+		case IPPROTO_ICMP:
+			printf("   Protocol: ICMP\n");
+			return;
+		case IPPROTO_IP:
+			printf("   Protocol: IP\n");
+			return;
+		default:
+			printf("   Protocol: unknown\n");
+			return;
+	}
+	# endif
+
+	/*
+	 *  OK, this packet is TCP.
+	 */
+
+	/* define/compute tcp header offset */
+	read_tcp = (struct tcphdr*)(packet + SIZE_ETHERNET + size_ip);
+	size_tcp = read_tcp->th_off * 4;
+	
+	#if DEBUG_LOGGING
+	if (size_tcp < 20) {
+		printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
+		return;
+	}
+
+	printf("   Src port: %d\n", ntohs(read_tcp->th_sport));
+	printf("   Dst port: %d\n", ntohs(read_tcp->th_dport));
+	#endif
+
+	/* define/compute tcp payload (segment) offset */
+	payload = (u_char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
+
+	/* compute tcp payload (segment) size */
+	size_payload = ntohs(read_ip->ip_len) - (size_ip + size_tcp);
+
+	/*
+	 * Print payload data; it might be binary, so don't just
+	 * treat it as a string.
+	 */
+	#if DEBUG_LOGGING
+	if (size_payload > 0) {
+		printf("   Payload (%d bytes):\n", size_payload);
+		print_payload(payload, size_payload);
+	}
+	#endif
+
+	#if SHOW_RAW_PAYLOAD
+	// print raw payload data
+	printf("Payload (%d bytes), cap(%d):\n", header->len, header->caplen);
+	printf("size_eth = %d, ", SIZE_ETHERNET);
+	printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", size_ip, size_tcp, size_payload, 
+																			SIZE_ETHERNET + size_ip + size_tcp + size_payload);
+	print_payload(packet, SIZE_ETHERNET + header->caplen);
+	printf("\n");
+	#endif
+print_app_usage
+return;
+}
+
+void got_packet_2(u_char *args, const struct pcap_pkthdr *header, const u_char *packet) {
+	printf("got packet no.:%d\n", ++count);
+	parsed_packet parsed_packet = parse_packet(packet);
+	
+	#if DEBUG_LOGGING
+	static int count = 1;                   /* packet counter */
+	printf("\nPacket number %d:\n", count);
+	count++;
+
+	printf("MAC src: %s\n", ether_ntoa((struct ether_addr *)parsed_packet.ethernet->ether_shost));
+	printf("MAC dst: %s\n", ether_ntoa((struct ether_addr *)parsed_packet.ethernet->ether_dhost));
+
+	if (parsed_packet.size_ip != 0) {
+		printf("IP src: %s\n", inet_ntoa(parsed_packet.ip->ip_src));
+		printf("IP dst: %s\n", inet_ntoa(parsed_packet.ip->ip_dst));
+		printf("IP protocol: %d\n", parsed_packet.ip->ip_p);
+	}
+
+	if (parsed_packet.size_tcp != 0) {
+		printf("TCP src port: %d\n", ntohs(parsed_packet.tcp->th_sport));
+		printf("TCP dst port: %d\n", ntohs(parsed_packet.tcp->th_dport));
+	}
+
+	if (parsed_packet.size_payload != 0) {
+		printf("Payload (%d bytes):\n", parsed_packet.size_payload);
+		print_payload((const u_char *)parsed_packet.payload, parsed_packet.size_payload);
+	}
+	#endif
+
+	#if SHOW_RAW_PAYLOAD
+	// print raw payload data
+	printf("Payload (%d bytes), cap(%d):\n", header->len, header->caplen);
+	printf("size_eth = %d, ", SIZE_ETHERNET);
+	printf("size_ip = %d, size_tcp = %d, size_payload = %d,  total = %d\n", parsed_packet.size_ip, parsed_packet.size_tcp, parsed_packet.size_payload, 
+																			SIZE_ETHERNET + parsed_packet.size_ip + parsed_packet.size_tcp + parsed_packet.size_payload);
+	print_payload(packet, header->len);
+	printf("\n");
+	#endif
+	printf("waiting for packet\n");
+	
+}
+
+
+
+int main(int argc, char **argv)
+{
+
+	signal(SIGINT, sigint);
+	std::cout << "mode: " << USE_CALLBACK << std::endl;
+	std::cout << "argc: " << argc << std::endl;
+	char *dev = NULL;			/* capture device name */
+	char filter_exp[256];
+	int pkt_lengths[] = {0, 0};
+	int pkt_requireds[] = {0, 0};
+
+	/* check for capture device name on command-line */
+	if(argc == 7) {
+		dev = argv[1];
+		strncpy(filter_exp, argv[2], sizeof(filter_exp));
+		pkt_lengths[0] = atoi(argv[3]);
+		pkt_requireds[0] = atoi(argv[4]);
+		pkt_lengths[1] = atoi(argv[5]);
+		pkt_requireds[1] = atoi(argv[6]);
+	}
+	else {
+		print_app_usage();
+		exit(EXIT_FAILURE);
+	}
+
+	// filter
+    pcap_t *handle;				
+    struct bpf_program fp;		
+    
+    printf("handle address1: %p\n", handle);
+    handle = initiate_sniff_pcap(&fp, dev, filter_exp);
+    printf("handle address3: %p\n", handle);
+	if (handle == NULL) {
+		printf("Error status\n");
+		exit(EXIT_FAILURE);
+	}
+    
+	#if USE_CALLBACK
+	printf("waiting for packet\n");
+	pcap_loop(handle, 0, got_packet_2, NULL);
+	#else
+
+	// int pkt1_length = 1053;
+	// int count_pkt1 = 0;
+	// int pkt2_length = 253;
+	// int count_pkt2 = 0;
+	int pkt_counts[] = {0, 0};
+	bool pkt_completes[] = {false, false};
+	if (pkt_requireds[0] == 0) pkt_completes[0] = true;
+	if (pkt_requireds[1] == 0) pkt_completes[1] = true;
+	int COUNT_CASES = 2;
+
+	bool is_timer_started = 0;
+	bool completed;
+
+	auto start_time = Clock::now();
+
+    while(!stop) {
+        struct pcap_pkthdr *header;
+        const u_char *packet;
+        int status = pcap_next_ex(handle, &header, &packet);
+		if (status == -1) {
+			printf("Error reading the packets: %s\n", pcap_geterr(handle));
+			break;
+		} 
+		if (status == 0) {
+			// printf("Receive timeout\n");
+			continue;
+		}
+
+		// if (header->len == pkt1_length){
+		// 	printf("packet1 no.:%d\n", ++count_pkt1);
+		// 	is_timer_started = true;
+		// }
+		// if (header->len == pkt2_length){
+		// 	printf("packet2 no.:%d\n", ++count_pkt2);
+		// 	is_timer_started = true;
+		// }
+		for (int i = 0; i < COUNT_CASES; i++) {
+			if (header->len == pkt_lengths[i]) {
+				printf("packet%d no.:%d\n", i+1, ++pkt_counts[i]);
+				if (!is_timer_started){
+					is_timer_started = true;
+					start_time = Clock::now();
+					printf("timer begin\n");
+				}
+
+				if (pkt_counts[i] == pkt_requireds[i]) {
+					pkt_completes[i] = true;
+				}
+			}
+		}
+
+		completed = true;
+		for (int i = 0; i < COUNT_CASES; i++) {
+			if (!pkt_completes[i]) {
+				completed = false;
+				break;
+			}
+		}
+		if (completed) goto exit_loop;
+
+
+    }
+	exit_loop:
+	auto end_time = Clock::now();
+	// duration nanosecond
+	auto duration = (end_time - start_time);
+	double dur_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1e9;
+	std::cout << "Duration: " << dur_seconds << " s, " << std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() << " ns\n"; 
+
+	for (int i = 0; i < COUNT_CASES; i++) {
+		printf("overall pkt%d count = %d\n", i+1, pkt_counts[i]);
+	}
+
+	int bytes_transferred = 0;
+	for (int i = 0; i < COUNT_CASES; i++) {
+		bytes_transferred += pkt_counts[i] * pkt_lengths[i];
+	}
+	printf("Total bytes transferred: %d\n", bytes_transferred);
+
+	double throughput = ((double)bytes_transferred) * 8 / dur_seconds; // in bits per second
+	// printf("Throughput: %llf bps\n", throughput);
+	// printf("Throughput: %llf Kbps\n", throughput / 1000);
+	// printf("Throughput: %llf Mbps\n", throughput / 1000000);
+
+	std::cout << "Throughput: " << throughput << " bps\n";
+	std::cout << "Throughput: " << throughput / 1000 << " Kbps\n";
+	std::cout << "Throughput: " << throughput / 1000000 << " Mbps\n";
+
+	// printf("overall pkt1 count = %d\n", count_pkt1);
+	// printf("overall pkt2 count = %d\n", count_pkt2);
+
+
+	#endif
+
+    cleanup_pcap(handle, &fp);
+	return 0;
+}
+
+		#endif
+		if (completed) goto exit_loop;
+    }
+	exit_loop:
+	printf("\ncount: %d\n", counter);
+	// duration nanosecond
+	auto duration = (end_time - start_time);
+	double dur_seconds = std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() / 1e9;
+	std::cout << "Duration: " << dur_seconds << " s, " << std::chrono::duration_cast<std::chrono::nanoseconds>(duration).count() << " ns\n"; 
+
+	for (int i = 0; i < COUNT_CASES; i++) {
+		printf("overall pkt%d count = %d\n", i+1, pkt_counts[i]);
+	}
+
+	int bytes_transferred = 0;
+	for (int i = 0; i < COUNT_CASES; i++) {
+		bytes_transferred += pkt_counts[i] * pkt_lengths[i];
+	}
+	printf("Total bytes transferred: %d\n", bytes_transferred);
+
+	double throughput = ((double)bytes_transferred) * 8 / dur_seconds; // in bits per second
+	// printf("Throughput: %llf bps\n", throughput);
+	// printf("Throughput: %llf Kbps\n", throughput / 1000);
+	// printf("Throughput: %llf Mbps\n", throughput / 1000000);
+
+	std::cout << "Throughput: " << throughput << " bps\n";
+	std::cout << "Throughput: " << throughput / 1000 << " Kbps\n";
+	std::cout << "Throughput: " << throughput / 1000000 << " Mbps\n";
+
+	// packet per second
+	double pkt_per_second = ((double)pkt_counts[0] + pkt_counts[1]) / dur_seconds;
+	std::cout << "Packet per second: " << pkt_per_second << " pps\n";
+
+	// printf("overall pkt1 count = %d\n", count_pkt1);
+	// printf("overall pkt2 count = %d\n", count_pkt2);
+
+
+	#endif
+
+    cleanup_pcap(handle, &fp);
+	return 0;
+}
