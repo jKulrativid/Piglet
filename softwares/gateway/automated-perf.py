@@ -7,6 +7,7 @@ import time
 from tqdm import tqdm
 from openpyxl import Workbook
 import pickle
+from datetime import datetime
 
 def get_cases(pkt_types, pkt_lengths, cap_ppses):
     cases = []
@@ -40,7 +41,7 @@ def execute_command(command, return_dict):
         return_dict["return_code"] = e.returncode
 
 def get_packet(preset, length, protocol):
-    basepkt = Ether(src="08:00:27:00:00:02", dst="08:00:27:00:00:01") / IP(src="10.147.18.200", dst="192.168.1.56")
+    basepkt = Ether(src="08:00:27:00:00:02", dst="08:00:27:00:00:01") / IP(src="10.147.18.200", dst="192.168.1.55")
     message = pad_message(f"{preset.capitalize()} Packet", length, protocol)
     if protocol == "TCP":
         if preset == "harmless":
@@ -132,14 +133,17 @@ def save_to_excel(results, dir, title):
     wb.save(f"{dir}/{title}.xlsx")
 
 def main():
-    injector = "enx2887ba3e44aa" # tp-link white
+    injector = "enp5s0" # RJ-45
     sniffer = "enxc84d442973a0" # gray
+    current_time = datetime.now()
 
-    save_to_dir = "results-sat-18"
+    save_to_dir = "results-" + current_time.strftime("%m-%d-%Y--%H-%M-%S")
+    print("save directory", save_to_dir)
 
+    repeat_count = 3
     pkt_types = ["harmless", "suspicious", "harmful", "mixed"]
     pkt_lengths = [65, 100, 500, 1500]
-    cap_ppses = [5000, 10000, 20000, 24000]
+    cap_ppses = [5000, 10000, 17000, 24000]
     # pkt_repeat = 200_000 if test_title != "mixed" else 100_000
     timeout = 50
     protocols = ["TCP", "UDP"]
@@ -166,7 +170,7 @@ def main():
                 pkt_type, pkt_length, cap_pps = case
                 print(f"Executing test case: {pkt_type}, {pkt_length}, {cap_pps}\r")
                 runs = []
-                for i in range(3):
+                for i in range(repeat_count):
                     duration, throughput_mbps, pps, pkt_count = execute_test(pkt_type, pkt_length, cap_pps, injector, sniffer, pkt_repeat, timeout, active_protocol)
                     runs.append((pkt_type, pkt_length, cap_pps, duration, throughput_mbps, pps, pkt_count))
                 results.append(runs)
