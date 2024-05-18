@@ -18,9 +18,11 @@ typedef struct {
     struct ether_header *ethernet;
     struct ip *ip;
     struct tcphdr *tcp;
+    struct udphdr *udp;
     char *payload;
     int size_ip;
     int size_tcp;
+    int size_udp;
     int size_payload;
 } parsed_packet;
 

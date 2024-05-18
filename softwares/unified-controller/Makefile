@@ -9,9 +9,10 @@ LDFLAGS = -lpcap -pthread
 unified-controller:
 	g++ -o unified-controller unified-controller.cpp $(IMPORTED) $(CFLAGS) $(LDFLAGS)
 
-.PHONY: unified-controller-debug
-unified-controller-debug:
-	g++ -o unified-controller-debug unified-controller-debug.cpp $(IMPORTED) $(CFLAGS) $(LDFLAGS)
+# unified-controller-dummy just receives packet and forwards it to to eth out
+.PHONY: unified-controller-dummy
+unified-controller-dummy:
+	g++ -o unified-controller-dummy unified-controller-dummy.cpp $(IMPORTED) $(CFLAGS) $(LDFLAGS)
 
 .PHONY: clean
 clean:

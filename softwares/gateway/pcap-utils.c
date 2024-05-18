@@ -139,6 +139,7 @@ parsed_packet get_empty_packet() {
 	parsed_packet.payload = NULL;
 	parsed_packet.size_ip = 0;
 	parsed_packet.size_tcp = 0;
+	parsed_packet.size_udp = 0;
 	parsed_packet.size_payload = 0;
 	return parsed_packet;
 }
@@ -150,9 +151,11 @@ parsed_packet parse_packet(const u_char *packet) {
 	struct ether_header *ethernet;
 	struct ip *ip;
 	struct tcphdr *tcp;
+	struct udphdr *udp;
 	char *payload;
 	int size_ip;
 	int size_tcp;
+	int size_udp;
 	int size_payload;
 
 	// parse ethernet
@@ -163,7 +166,7 @@ parsed_packet parse_packet(const u_char *packet) {
 	ip = (struct ip*)(packet + SIZE_ETHERNET);
 	size_ip = ip->ip_hl*4;
 	if (size_ip < 20) {
-		printf("   * Invalid IP header length: %u bytes\n", size_ip);
+		//printf("   * Invalid IP header length: %u bytes\n", size_ip);
 		return parsed_packet;
 	}
 	parsed_packet.ip = ip;
@@ -172,8 +175,32 @@ parsed_packet parse_packet(const u_char *packet) {
 	// determine protocol
 	switch(ip->ip_p) {
 		case IPPROTO_TCP:
-			break;
+		// parse tcp
+			tcp = (struct tcphdr*)(packet + SIZE_ETHERNET + size_ip);
+			size_tcp = tcp->th_off * 4;
+			if (size_tcp < 20) {
+				//printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
+				return parsed_packet;
+			}
+			parsed_packet.tcp = tcp;
+			parsed_packet.size_tcp = size_tcp;
+
+			payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
+			size_payload = ntohs(ip->ip_len) - (size_ip + size_tcp);
+			parsed_packet.payload = payload;
+			parsed_packet.size_payload = size_payload;
+
+			return parsed_packet;
 		case IPPROTO_UDP:
+			udp = (struct udphdr*)(packet + SIZE_ETHERNET + size_ip);
+			size_udp = 8;
+			parsed_packet.udp = udp;
+			parsed_packet.size_udp = size_udp;
+
+			payload = (char *)(packet + SIZE_ETHERNET + size_ip + parsed_packet.size_udp);
+			size_payload = ntohs(ip->ip_len) - (size_ip + size_udp);
+			parsed_packet.payload = payload;
+			parsed_packet.size_payload = size_payload;
 			return parsed_packet;
 		case IPPROTO_ICMP:
 			return parsed_packet;
@@ -183,22 +210,7 @@ parsed_packet parse_packet(const u_char *packet) {
 			return parsed_packet;
 	}
 
-	// parse tcp
-	tcp = (struct tcphdr*)(packet + SIZE_ETHERNET + size_ip);
-	size_tcp = tcp->th_off * 4;
-	if (size_tcp < 20) {
-		printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
-		return parsed_packet;
-	}
-	parsed_packet.tcp = tcp;
-	parsed_packet.size_tcp = size_tcp;
-
-	payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
-	size_payload = ntohs(ip->ip_len) - (size_ip + size_tcp);
-	parsed_packet.payload = payload;
-	parsed_packet.size_payload = size_payload;
-
-	return parsed_packet;
+	
 }
 
 /*
