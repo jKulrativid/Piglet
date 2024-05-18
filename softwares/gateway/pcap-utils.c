@@ -30,8 +30,6 @@
 
 #define PCAP_TIMEOUT 1000 // doesn't seems useful for a non-blocking mode
 
-
-
 /*
  * print data in rows of 16 bytes: offset   hex   ascii
  *
@@ -137,6 +135,7 @@ parsed_packet get_empty_packet() {
 	parsed_packet.ip = NULL;
 	parsed_packet.tcp = NULL;
 	parsed_packet.payload = NULL;
+	parsed_packet.size_total = 0;
 	parsed_packet.size_ip = 0;
 	parsed_packet.size_tcp = 0;
 	parsed_packet.size_udp = 0;
@@ -145,9 +144,7 @@ parsed_packet get_empty_packet() {
 }
 
 // still bug but nevermind
-parsed_packet parse_packet(const u_char *packet) {
-	parsed_packet parsed_packet = get_empty_packet();
-
+int parse_packet(const u_char *packet, parsed_packet *parsed_packet) {
 	struct ether_header *ethernet;
 	struct ip *ip;
 	struct tcphdr *tcp;
@@ -160,17 +157,17 @@ parsed_packet parse_packet(const u_char *packet) {
 
 	// parse ethernet
 	ethernet = (struct ether_header*)(packet);
-	parsed_packet.ethernet = ethernet;
+	parsed_packet->ethernet = ethernet;
 
 	// parse ip
 	ip = (struct ip*)(packet + SIZE_ETHERNET);
 	size_ip = ip->ip_hl*4;
 	if (size_ip < 20) {
 		//printf("   * Invalid IP header length: %u bytes\n", size_ip);
-		return parsed_packet;
+		return -1;
 	}
-	parsed_packet.ip = ip;
-	parsed_packet.size_ip = size_ip;
+	parsed_packet->ip = ip;
+	parsed_packet->size_ip = size_ip;
 
 	// determine protocol
 	switch(ip->ip_p) {
@@ -180,37 +177,40 @@ parsed_packet parse_packet(const u_char *packet) {
 			size_tcp = tcp->th_off * 4;
 			if (size_tcp < 20) {
 				//printf("   * Invalid TCP header length: %u bytes\n", size_tcp);
-				return parsed_packet;
+				return -1;
 			}
-			parsed_packet.tcp = tcp;
-			parsed_packet.size_tcp = size_tcp;
+			parsed_packet->tcp = tcp;
+			parsed_packet->size_tcp = size_tcp;
 
 			payload = (char *)(packet + SIZE_ETHERNET + size_ip + size_tcp);
 			size_payload = ntohs(ip->ip_len) - (size_ip + size_tcp);
-			parsed_packet.payload = payload;
-			parsed_packet.size_payload = size_payload;
+			parsed_packet->payload = payload;
+			parsed_packet->size_payload = size_payload;
 
-			return parsed_packet;
+			parsed_packet->size_total = SIZE_ETHERNET + size_ip + size_tcp + size_payload;
+
+			return 0;
 		case IPPROTO_UDP:
 			udp = (struct udphdr*)(packet + SIZE_ETHERNET + size_ip);
 			size_udp = 8;
-			parsed_packet.udp = udp;
-			parsed_packet.size_udp = size_udp;
+			parsed_packet->udp = udp;
+			parsed_packet->size_udp = size_udp;
 
-			payload = (char *)(packet + SIZE_ETHERNET + size_ip + parsed_packet.size_udp);
+			payload = (char *)(packet + SIZE_ETHERNET + size_ip + parsed_packet->size_udp);
 			size_payload = ntohs(ip->ip_len) - (size_ip + size_udp);
-			parsed_packet.payload = payload;
-			parsed_packet.size_payload = size_payload;
-			return parsed_packet;
-		case IPPROTO_ICMP:
-			return parsed_packet;
-		case IPPROTO_IP:
-			return parsed_packet;
-		default:
-			return parsed_packet;
-	}
+			parsed_packet->payload = payload;
+			parsed_packet->size_payload = size_payload;
 
-	
+			parsed_packet->size_total = SIZE_ETHERNET + size_ip + size_udp + size_payload;
+
+			return 0;
+		case IPPROTO_ICMP:
+			return 1;
+		case IPPROTO_IP:
+			return 1;
+		default:
+			return -1;
+	}
 }
 
 /*

@@ -25,7 +25,7 @@
 
 #define T_BUFFER unsigned char
 
-#define BUFFER_SIZE (128 * 1024)	 	/* must match driver exactly */
+#define BUFFER_SIZE (8 * 2048)	 	/* must match driver exactly */
 #define BUFFER_SLOT_COUNT (BUFFER_SIZE / sizeof(T_BUFFER))
 #define BUFFER_COUNT 32					/* driver only */
 
