@@ -143,14 +143,16 @@ def main():
     repeat_count = 3
     pkt_types = ["harmless", "suspicious", "harmful", "mixed"]
     pkt_lengths = [65, 100, 500, 1500]
-    cap_ppses = [5000, 10000, 17000, 24000]
+    cap_ppses = [17000, 20000, 25000, 30000]
     # pkt_repeat = 200_000 if test_title != "mixed" else 100_000
-    timeout = 50
+   
     protocols = ["TCP", "UDP"]
     for active_protocol in protocols:
         for pkt_type in pkt_types:
             test_title = f"{pkt_type}_{active_protocol}"
             pkt_repeat = 200_000 if pkt_type != "mixed" else 100_000
+            pkt_repeat = 100 if pkt_type == "harmful" else pkt_repeat
+            timeout = 50 if pkt_type != "harmful" else 10
             # pkt_repeat = 2
 
             print(f"testing {test_title} packets")
