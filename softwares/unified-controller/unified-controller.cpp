@@ -29,7 +29,7 @@
 #define TX_CHANNEL_COUNT 1
 #define RX_CHANNEL_COUNT 2
 
-#define MTU 1500
+#define MTU 2048 // 1500 but prefer much larger that frame size
 
 const char *tx_channel_names[] = { "dma_proxy_tx_0", /* add unique channel names here */ };
 const char *rx_channel_names[] = { "dma_proxy_rx_0", "dma_proxy_rx_1",/* add unique channel names here */ };
@@ -88,6 +88,7 @@ void tx_thread(struct channel *channel_ptr)
 	int i, counter = 0, buffer_id=0, in_progress_count = 0;
 	int stop_in_progress = 0;
 	int sleep_time_ms = 1;
+	int check_packet = 0, status = 0;
 
 	// Start all buffers being sent
 
@@ -105,6 +106,17 @@ void tx_thread(struct channel *channel_ptr)
 			if (status == 1){
 				// copy to buffer
 				// printf("packet received\n");
+				check_packet = parse_packet_for_length(packet);
+				if (check_packet == -1){
+					continue;
+				}
+				if (check_packet == -2) {
+					status = pcap_inject(inject_snort_handle, channel_ptr->buf_ptr[buffer_id].buffer, header->len);
+					if (status == -1){
+						fprintf(stderr, "Error sending packet to snort: %s\n", pcap_geterr(inject_snort_handle));
+					}
+					continue;
+				}
 				memcpy(channel_ptr->buf_ptr[buffer_id].buffer, packet, header->len);
 #if DEBUG==1
 				printf("pktlen:%d, pktcaplen:%d\n", header->len, header->caplen);
@@ -130,7 +142,7 @@ void tx_thread(struct channel *channel_ptr)
 			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_NO_ERROR) {
 				break;
 			}
-			if (channel_ptr->buf_ptr[buffer_id].status != channel_buffer::proxy_status::PROXY_TIMEOUT){
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_ERROR){
 #if DEBUG==1
 				printf("Proxy tx transfer error: error_id=%d\n", channel_ptr->buf_ptr[buffer_id].status);
 #endif
@@ -152,34 +164,34 @@ void rx_thread_0(struct channel *channel_ptr)
 	int status;
 	parsed_packet parsed_packet = get_empty_packet();
 	int packet_size;
-	int sleep_time_ms = 1;
+	int sleep_time_ms = 3;
 
 	while(!stop){
 		channel_ptr->buf_ptr[buffer_id].length = MTU;
 		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
+
+		int parse_success = 0;
 		
 		while(!stop){
 			ioctl(channel_ptr->fd, FINISH_XFER, &buffer_id);
 			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_NO_ERROR) {
+				parse_success = 1;
 				break;
 			} 
-			else {
-				if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
-					// printf("timeout\n");
-					std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time_ms));
-					continue;
-				}
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_ERROR){
 #if DEBUG==1
-				printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
-							num_transfers, rx_counter, in_progress_count);
-#endif
-				return;
+				printf("Rx thread 0 transfer error\n");
+#endif	
+				break;
 			}
 		}
 
-		status = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer, &parsed_packet);
-		if (status != 0) {
+		if (!parse_success) continue;
+
+		packet_size = parse_packet_for_length((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
+		if (packet_size < 0) {
 			// failed to parse packet
+			printf("rx0 error: packet size = %d\n", packet_size);
 			continue;
 		}
 
@@ -192,6 +204,7 @@ void rx_thread_0(struct channel *channel_ptr)
 		if (status == -1){
 			fprintf(stderr, "Error sending packet to snort: %s\n", pcap_geterr(inject_snort_handle));
 		}
+		printf("successfully sent packet size %d\n", parsed_packet.size_total);
 #endif
 		
 		buffer_id += BUFFER_INCREMENT;
@@ -207,33 +220,41 @@ void rx_thread_1(struct channel *channel_ptr)
 	int status;
 	parsed_packet parsed_packet = get_empty_packet();
 	int packet_size;
+	int sleep_time_ms = 1;
 
 	while(!stop){
 		channel_ptr->buf_ptr[buffer_id].length = MTU;
 		ioctl(channel_ptr->fd, START_XFER, &buffer_id);
+
+		int parse_success = 0;
 		
 		while(!stop){
 			ioctl(channel_ptr->fd, FINISH_XFER, &buffer_id);
 			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_NO_ERROR) {
+				parse_success = 1;
 				break;
-			} 
-			else {
-				if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_TIMEOUT){
-					continue;
-				}
-#if DEBUG==1
-				printf("Proxy rx transfer error, # transfers %d, # completed %d, # in progress %d\n",
-							num_transfers, rx_counter, in_progress_count);
-#endif
 			}
+			if (channel_ptr->buf_ptr[buffer_id].status == channel_buffer::proxy_status::PROXY_ERROR){
+#if DEBUG==1
+			printf("Rx thread 1 transfer error\n");
+#endif		
+				break;
+			}
+#if DEBUG==1
+			printf("Rx thread 1 DMA busy\n");
+#endif
+
+			std::this_thread::sleep_for(std::chrono::milliseconds(sleep_time_ms));
 		}
+
+		if (!parse_success) continue;
 
 		// send to egress (handle error status)
 		// get size of packet by parsing
-		status = parse_packet((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer, &parsed_packet);
-		if (status != 0) {
+		packet_size = parse_packet_for_length((const u_char *)channel_ptr->buf_ptr[buffer_id].buffer);
+		if (packet_size < 0) {
 #if DEBUG==1
-			printf("failed to parse packet\n");
+			printf("failed to parse packet: size=%d\n", packet_size);
 #endif
 			continue;
 		}
@@ -242,11 +263,12 @@ void rx_thread_1(struct channel *channel_ptr)
 		printf("parsed packet total size %d\n", parsed_packet.size_total);
 #endif
 
-		status = pcap_inject(inject_egress_handle, channel_ptr->buf_ptr[buffer_id].buffer, parsed_packet.size_total);
+		status = pcap_inject(inject_egress_handle, channel_ptr->buf_ptr[buffer_id].buffer, packet_size);
 #if DEBUG==1
 		if (status == -1){
 			fprintf(stderr, "Error sending packet to egress: %s\n", pcap_geterr(inject_egress_handle));
 		}
+		printf("successfully sent packet size %d\n", parsed_packet.size_total);
 #endif
 		
 		buffer_id += BUFFER_INCREMENT;
@@ -387,7 +409,7 @@ int main(int argc, char *argv[])
 		close(rx_channels[i].fd);
 	}
 
-	printf("DMA proxy test complete\n");
+	printf("unified controller shutted down.\nPlease reset DMA properly\n");
 
 	return 0;
 }
