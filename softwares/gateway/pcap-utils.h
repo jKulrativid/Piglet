@@ -18,9 +18,12 @@ typedef struct {
     struct ether_header *ethernet;
     struct ip *ip;
     struct tcphdr *tcp;
+    struct udphdr *udp;
     char *payload;
+    int size_total;
     int size_ip;
     int size_tcp;
+    int size_udp;
     int size_payload;
 } parsed_packet;
 
@@ -35,7 +38,7 @@ pcap_t* initiate_inject_pcap(char *dev);
 
 void cleanup_pcap(pcap_t *handle, struct bpf_program *fp);
 
-parsed_packet parse_packet(const u_char *packet);
+int parse_packet(const u_char *packet, parsed_packet *parsed_packet);
 
 int parse_packet_for_length(const u_char *packet);
 

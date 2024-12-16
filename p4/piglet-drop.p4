@@ -186,7 +186,11 @@ control MyProcessing(inout headers hdr,
     }
 
     action check_udp_rules() {
-
+is_safe = is_safe && !(((hdr.ipv4.src & 0x0) == 0x00000000) && ((hdr.ipv4.dst & 0xffffff00) == 0xc0a80100) && ((hdr.udp.dst_port == 22)));
+is_safe = is_safe && !(((hdr.ipv4.src & 0x0) == 0x00000000) && ((hdr.ipv4.dst & 0xffffff00) == 0xc0a80100) && ((hdr.udp.dst_port == 1433)));
+is_safe = is_safe && !(((hdr.ipv4.src & 0x0) == 0x00000000) && ((hdr.ipv4.dst & 0xffffff00) == 0xc0a80100) && ((hdr.udp.dst_port == 80)));
+is_safe = is_safe && !(((hdr.ipv4.src & 0x0) == 0x00000000) && ((hdr.ipv4.dst & 0xffffff00) == 0xc0a80100) && ((hdr.udp.dst_port == 21)));
+is_safe = is_safe && !(((hdr.ipv4.src & 0x0) == 0x00000000) && ((hdr.ipv4.dst & 0xffffff00) == 0xc0a80100) && ((hdr.udp.dst_port == 28881)));
     }
 
     action check_tcp_rules() {
